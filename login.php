@@ -19,15 +19,26 @@ $current_role = $_GET["role"] ?? "student";
 $email_field_disabled = false;
 $otp_flow_active = false;
 $submitted_email = $_SESSION['submitted_email'] ?? '';
+$submitted_name = $_SESSION['submitted_name'] ?? '';
 $submitted_role = $_SESSION['current_role'] ?? $current_role;
 
 // Handle session clear/refresh
 if (isset($_GET['action']) && $_GET['action'] === 'clear_session') {
-    unset($_SESSION['submitted_email'], $_SESSION['current_role']);
+    unset($_SESSION['submitted_email'], $_SESSION['submitted_name'], $_SESSION['current_role']);
     setcookie(COOKIE_NAME, '', time() - 3600, '/', '', true, true); // Clear cookie
     session_regenerate_id(true);
     header("Location: " . strtok($_SERVER["REQUEST_URI"], '?'));
     exit;
+}
+
+/**
+ * Get the base URL for API requests
+ */
+function getBaseUrl() {
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+    $host = $_SERVER['HTTP_HOST'];
+    $path = dirname($_SERVER['REQUEST_URI']);
+    return $protocol . $host . $path;
 }
 
 /**
@@ -54,16 +65,17 @@ function makeApiRequest($url, $data) {
 
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-    $response_body = substr($response, $header_size);
-    $response_headers = substr($response, 0, $header_size);
-
+    
     if ($response === false) {
         $error = curl_error($ch);
         error_log("cURL Error: " . $error . " | URL: " . $url);
         curl_close($ch);
         return ['success' => false, 'error' => 'Could not connect to the authentication service. Error: ' . $error];
     }
+    
+    $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+    $response_body = substr($response, $header_size);
+    $response_headers = substr($response, 0, $header_size);
 
     curl_close($ch);
 
@@ -83,15 +95,18 @@ function makeApiRequest($url, $data) {
 }
 
 /**
- * Validate email and role inputs
+ * Validate email, name and role inputs
  */
-function validateInputs($email, $role)
+function validateInputs($email, $name, $role)
 {
     if (empty($email)) {
         return "Please enter your email address.";
     }
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         return "Invalid email address format.";
+    }
+    if (empty($name) || strlen(trim($name)) < 2) {
+        return "Please enter a valid name (at least 2 characters).";
     }
     if (empty($role) || !in_array($role, ['student', 'recruiter', 'coordinator', 'admin'])) {
         return "Please select a valid role.";
@@ -160,7 +175,7 @@ function handleUserAuthentication($api_response)
     }
 
     // Clear OTP session variables
-    unset($_SESSION['submitted_email'], $_SESSION['current_role']);
+    unset($_SESSION['submitted_email'], $_SESSION['submitted_name'], $_SESSION['current_role']);
 
     return true;
 }
@@ -176,27 +191,30 @@ if (
 
     if ($_POST['stage'] === 'resend_otp') {
         $email = $_SESSION['submitted_email'] ?? '';
+        $name = $_SESSION['submitted_name'] ?? '';
         $role = $_SESSION['current_role'] ?? '';
 
         if (empty($email) || empty($role)) {
             $error_message = "Session expired. Please start over.";
-            unset($_SESSION['submitted_email'], $_SESSION['current_role']);
+            unset($_SESSION['submitted_email'], $_SESSION['submitted_name'], $_SESSION['current_role']);
             $otp_flow_active = false;
             $email_field_disabled = false;
         }
     } else {
         $email = filter_var(trim($_POST["email"] ?? ''), FILTER_SANITIZE_EMAIL);
+        $name = trim($_POST["name"] ?? '');
         $role = ($email === 'tnp@iiitmanipur.ac.in') ? 'admin' : trim($_POST["role"] ?? '');
     }
 
     if (empty($error_message)) {
-        $validation_error = validateInputs($email, $role);
+        $validation_error = validateInputs($email, $name, $role);
         if ($validation_error) {
             $error_message = $validation_error;
         } else {
-            $api_url = "dataRouting/api/auth/auth_handler.php";
+            $api_url = getBaseUrl() . "/dataRouting/api/auth/auth_handler.php";
             $result = makeApiRequest($api_url, [
                 'email' => $email,
+                'name' => $name,
                 'role' => $role,
                 'action' => 'send_otp'
             ]);
@@ -206,6 +224,7 @@ if (
                     : ($result['data']['message'] ?? "OTP sent successfully to your email.");
 
                 $_SESSION['submitted_email'] = $email;
+                $_SESSION['submitted_name'] = $name;
                 $_SESSION['current_role'] = $role;
                 $submitted_email = $email;
                 $submitted_role = $role;
@@ -246,13 +265,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['stage']) && $_POST['s
         $error_message = "Session expired. Please start over.";
         $otp_flow_active = false;
         $email_field_disabled = false;
-        unset($_SESSION['submitted_email'], $_SESSION['current_role']);
+        unset($_SESSION['submitted_email'], $_SESSION['submitted_name'], $_SESSION['current_role']);
     } elseif (empty($otp)) {
         $error_message = "Please enter the OTP.";
     } elseif (!preg_match('/^\d{6}$/', $otp)) {
         $error_message = "OTP must be a 6-digit number.";
     } else {
-        $api_url = "dataRouting/api/auth/auth_handler.php";
+        $api_url = getBaseUrl() . "/dataRouting/api/auth/auth_handler.php";
         $result = makeApiRequest($api_url, [
             'email' => $email,
             'otp' => $otp,
@@ -396,6 +415,19 @@ if (!$otp_flow_active && isset($_SESSION['submitted_email']) && !empty($_SESSION
                         <input type="hidden" name="stage" value="send_otp">
 
                         <div class="space-y-2">
+                            <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-user text-gray-400"></i>
+                                </div>
+                                <input id="name" name="name" type="text" required
+                                    value="<?php echo htmlspecialchars($submitted_name); ?>"
+                                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                                    placeholder="Enter your full name">
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
                             <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -531,10 +563,16 @@ if (!$otp_flow_active && isset($_SESSION['submitted_email']) && !empty($_SESSION
         }
 
         function validateForm() {
+            const name = document.getElementById('name');
             const email = document.getElementById('email');
             const sendBtn = document.getElementById('sendOtpBtn');
             const btnText = sendBtn.querySelector('.btn-text');
             const btnSpinner = sendBtn.querySelector('.btn-spinner');
+
+            if (!name.value.trim() || name.value.trim().length < 2) {
+                alert('Please enter a valid name (at least 2 characters).');
+                return false;
+            }
 
             if (!email.value.trim()) {
                 alert('Please enter your email address.');
