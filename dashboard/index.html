@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TNP Portal - Training and Placement</title>
+    
+    <!-- Tailwind CSS -->
+    <link href="../assets/css/2.2.19.tailwind.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="../assets/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <style>
+        .sidebar-transition {
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .mobile-menu-open {
+            transform: translateX(0);
+        }
+        
+        .mobile-menu-closed {
+            transform: translateX(-100%);
+        }
+        
+        @media (min-width: 768px) {
+            .mobile-menu-closed {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Mobile menu overlay -->
+    <div id="mobile-menu-overlay" class="fixed inset-0 bg-gray-600 bg-opacity-75 z-40 lg:hidden hidden"></div>
+    
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-gray-800 sidebar-transition mobile-menu-closed lg:translate-x-0">
+        <div class="flex items-center justify-between h-16 px-4 bg-gray-900">
+            <div class="flex items-center">
+                <img src="../assets/img/iiitm-logo.png" alt="IIIT Manipur" class="h-8 w-8 mr-3">
+                <span class="text-white font-semibold text-lg">TNP Portal</span>
+            </div>
+            <button id="close-sidebar" class="lg:hidden text-gray-400 hover:text-white">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- Sidebar Navigation -->
+        <div id="sidebar-navigation" class="p-4">
+            <!-- Navigation will be loaded here by the router -->
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="lg:ml-64">
+        <!-- Top Navigation -->
+        <nav id="top-navigation" class="bg-white shadow-sm border-b border-gray-200">
+            <div class="flex items-center justify-between h-16 px-4">
+                <!-- Mobile menu button -->
+                <button id="open-sidebar" class="lg:hidden text-gray-600 hover:text-gray-900">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                
+                <!-- Desktop navigation -->
+                <div id="navigation-container" class="hidden lg:flex items-center space-x-4">
+                    <!-- Navigation will be loaded here by the router -->
+                </div>
+                
+                <!-- User menu -->
+                <div id="user-menu" class="flex items-center space-x-4">
+                    <!-- User info will be loaded here -->
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Page Content -->
+        <main id="content-container" class="min-h-screen">
+            <!-- Content will be loaded here by the router -->
+            <div class="flex items-center justify-center h-64">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <span class="ml-3 text-gray-600">Loading...</span>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="../assets/js/jquery.min.js"></script>
+    <script src="../assets/js/frontend-router.js"></script>
+    
+    <script>
+        // Mobile menu functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            const openBtn = document.getElementById('open-sidebar');
+            const closeBtn = document.getElementById('close-sidebar');
+            
+            function openMobileMenu() {
+                sidebar.classList.remove('mobile-menu-closed');
+                sidebar.classList.add('mobile-menu-open');
+                overlay.classList.remove('hidden');
+            }
+            
+            function closeMobileMenu() {
+                sidebar.classList.remove('mobile-menu-open');
+                sidebar.classList.add('mobile-menu-closed');
+                overlay.classList.add('hidden');
+            }
+            
+            openBtn.addEventListener('click', openMobileMenu);
+            closeBtn.addEventListener('click', closeMobileMenu);
+            overlay.addEventListener('click', closeMobileMenu);
+            
+            // Close mobile menu on window resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 1024) {
+                    closeMobileMenu();
+                }
+            });
+        });
+        
+        // Update user menu when router loads user data
+        function updateUserMenu(userData) {
+            const userMenu = document.getElementById('user-menu');
+            if (userData && userMenu) {
+                userMenu.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right">
+                            <div class="text-sm font-medium text-gray-900">${userData.name}</div>
+                            <div class="text-xs text-gray-500">${userData.role}</div>
+                        </div>
+                        <div class="relative">
+                            <button class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <img class="h-8 w-8 rounded-full" src="https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&background=random" alt="">
+                            </button>
+                        </div>
+                        <a href="#" data-route="logout" class="text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
+                    </div>
+                `;
+            }
+        }
+        
+        // Listen for user data updates from router
+        window.addEventListener('userDataLoaded', function(event) {
+            updateUserMenu(event.detail);
+        });
+    </script>
+</body>
+</html> 

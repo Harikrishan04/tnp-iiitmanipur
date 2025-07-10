@@ -1,0 +1,65 @@
+.progress-line {
+    height: 4px;
+    background: #e0e0e0;
+    position: relative;
+    flex: 1;
+    margin: 0 20px;
+}
+.progress-line.active {
+    background: #4CAF50;
+}
+.progress-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+.progress-circle.completed {
+    background: #4CAF50;
+    color: white;
+}
+.progress-circle.active {
+    background: #2196F3;
+    color: white;
+}
+.progress-circle.inactive {
+    background: #e0e0e0;
+    color: #666;
+}
+.form-input {
+    border: none;
+    border-bottom: 2px solid #4CAF50;
+    background: transparent;
+    padding: 4px;
+    outline: none;
+    width: 100%;
+    font-size: 16px;
+    transition: border-bottom-color 0.3s ease;
+}
+.form-input:valid {
+    border-bottom-color: #4CAF50; /* Green for valid input */
+}
+.form-input:focus {
+    border-bottom-color: #2196F3;
+}
+.form-input::placeholder {
+    color: #999;
+}
+.submit-btn {
+    background: #4CAF50;
+    color: white;
+    padding: 12px 40px;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.submit-btn:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+}

@@ -1,0 +1,38 @@
+# Ignore vendor directory (Composer dependencies)
+vendor/
+
+# Do NOT ignore .env (so it will be committed)
+# .env
+
+# Ignore environment local overrides
+.env.local
+.env.*.local
+
+# Ignore logs and cache
+storage/logs/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+
+# Ignore IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore node modules if any
+node_modules/
+
+# Ignore generated files
+*.log
+*.cache
+
+# Ignore PHPUnit result cache
+.phpunit.result.cache
+
+# Ignore coverage reports
+coverage/
