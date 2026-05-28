@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile — TNP Portal</title>
+    <meta name="description" content="Manage your student profile on the IIIT Manipur Placement Portal.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        /* Layout: fixed sidebar + scrollable main */
+        #app-layout { display: flex; min-height: 100vh; }
+        #sidebar     { width: 256px; flex-shrink: 0; }
+        #main-area   { flex: 1; overflow-y: auto; }
+
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .fade-in { animation: fadeIn 0.4s ease-out both; }
+
+        /* Sidebar nav link */
+        .nav-link { display:flex; align-items:center; gap:12px; padding:10px 16px; border-radius:12px;
+                    color:#4b5563; font-weight:500; font-size:0.875rem; text-decoration:none;
+                    transition:all 0.2s; }
+        .nav-link:hover { background:#fdf2f8; color:#8B2A8B; }
+        .nav-link.active { background:#fdf2f8; color:#8B2A8B; font-weight:600; }
+
+        /* Grid for form fields */
+        .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+        @media(max-width:640px){ .field-grid { grid-template-columns:1fr; } }
+        .field-full { grid-column: 1 / -1; }
+    </style>
+</head>
+<body style="background:#f9fafb; font-family:Inter,system-ui,sans-serif;">
+
+<div id="app-layout">
+    <!-- ═══ Sidebar ═══ -->
+    <aside id="sidebar" style="background:#fff; border-right:1px solid #f3f4f6; display:flex; flex-direction:column;">
+        <!-- Logo -->
+        <div style="padding:24px; border-bottom:1px solid #f3f4f6;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <img src="../assets/img/iiitm-logo.png" alt="IIIT Manipur"
+                     style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                <div>
+                    <div style="font-size:0.875rem; font-weight:700; color:#1f2937;">TNP Portal</div>
+                    <div style="font-size:0.75rem; color:#6b7280;">Student Dashboard</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nav -->
+        <nav style="flex:1; padding:16px; display:flex; flex-direction:column; gap:4px;">
+            <a href="profile.html"       class="nav-link active">👤 <span>My Profile</span></a>
+            <a href="jobs.html"          class="nav-link">💼 <span>Job Openings</span></a>
+            <a href="applications.html"  class="nav-link">📋 <span>My Applications</span></a>
+        </nav>
+
+        <!-- User footer -->
+        <div style="padding:16px; border-top:1px solid #f3f4f6;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <div id="avatar" style="width:32px; height:32px; border-radius:50%; background:#fce7f3;
+                     display:flex; align-items:center; justify-content:center;
+                     font-weight:700; font-size:0.875rem; color:#8B2A8B;">?</div>
+                <div style="flex:1; min-width:0;">
+                    <div id="sidebar-email" style="font-size:0.8125rem; font-weight:500; color:#1f2937;
+                         white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+                    <div style="font-size:0.75rem; color:#6b7280;">Student</div>
+                </div>
+            </div>
+            <button onclick="Auth.logout()"
+                    style="width:100%; display:flex; align-items:center; gap:10px; padding:10px 16px;
+                           border-radius:12px; background:none; border:none; cursor:pointer;
+                           color:#ef4444; font-size:0.875rem; font-weight:500;
+                           transition:background 0.2s;"
+                    onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
+                🚪 <span>Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ═══ Main ═══ -->
+    <div id="main-area">
+        <!-- Header -->
+        <header style="background:#fff; border-bottom:1px solid #f3f4f6; padding:16px 32px;
+                        display:flex; align-items:center; justify-content:between; position:sticky; top:0; z-index:10;">
+            <h1 style="font-size:1.25rem; font-weight:600; color:#1f2937; margin:0;">My Profile</h1>
+            <span id="today-date" style="font-size:0.875rem; color:#9ca3af; margin-left:auto;"></span>
+        </header>
+
+        <main style="padding:32px; max-width:900px; margin:0 auto;">
+
+            <!-- Profile completion banner -->
+            <div id="completion-banner" style="display:none; margin-bottom:24px; background:#fffbeb;
+                 border:1px solid #fde68a; border-radius:16px; padding:16px 20px;
+                 display:none; align-items:center; gap:16px;">
+                <span style="font-size:1.5rem;">⚠️</span>
+                <div style="flex:1;">
+                    <p style="font-weight:600; color:#92400e; margin:0 0 6px;">Complete your profile to apply for jobs</p>
+                    <div style="background:#fde68a; border-radius:99px; height:8px;">
+                        <div id="completion-bar" style="background:#d97706; height:8px; border-radius:99px; width:0%; transition:width 0.5s;"></div>
+                    </div>
+                </div>
+                <span id="completion-pct" style="font-weight:700; color:#b45309; font-size:1.125rem;">0%</span>
+            </div>
+
+            <!-- ─── Personal Info ─── -->
+            <div class="card fade-in" style="margin-bottom:20px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                    <h2 style="font-size:1rem; font-weight:600; color:#1f2937; margin:0;">Personal Information</h2>
+                    <button onclick="saveSection('personal')" class="btn-primary" style="width:auto; padding:8px 20px; font-size:0.875rem;">Save</button>
+                </div>
+                <div class="field-grid">
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Full Name</label>
+                        <input type="text" id="f-name" class="input-field" placeholder="Your full name">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Roll Number</label>
+                        <input type="text" id="f-roll_no" class="input-field" placeholder="e.g. CSE21001">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Date of Birth</label>
+                        <input type="date" id="f-date_of_birth" class="input-field">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Gender</label>
+                        <select id="f-gender" class="input-field">
+                            <option value="">Select gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                            <option value="prefer_not_to_say">Prefer not to say</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Phone</label>
+                        <input type="tel" id="f-phone" class="input-field" placeholder="10-digit number">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Email</label>
+                        <input type="email" id="f-email" class="input-field" readonly
+                               style="background:#f9fafb; cursor:not-allowed; opacity:0.7;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Category</label>
+                        <select id="f-category" class="input-field">
+                            <option value="">Select category</option>
+                            <option value="general">General</option>
+                            <option value="obc">OBC</option>
+                            <option value="sc">SC</option>
+                            <option value="st">ST</option>
+                            <option value="ews">EWS</option>
+                            <option value="pwd">PwD</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Blood Group</label>
+                        <select id="f-blood_group" class="input-field">
+                            <option value="">Select blood group</option>
+                            <option>A+</option><option>A-</option>
+                            <option>B+</option><option>B-</option>
+                            <option>O+</option><option>O-</option>
+                            <option>AB+</option><option>AB-</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── Academic Info ─── -->
+            <div class="card fade-in" style="margin-bottom:20px; animation-delay:0.1s;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                    <h2 style="font-size:1rem; font-weight:600; color:#1f2937; margin:0;">Academic Information</h2>
+                    <button onclick="saveSection('academic')" class="btn-primary" style="width:auto; padding:8px 20px; font-size:0.875rem;">Save</button>
+                </div>
+                <div class="field-grid">
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Department</label>
+                        <select id="f-dept_id" class="input-field"><option value="">Select department</option></select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Program</label>
+                        <select id="f-program_id" class="input-field"><option value="">Select program</option></select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Current Semester</label>
+                        <select id="f-current_semester" class="input-field">
+                            <option value="">Select semester</option>
+                            <option value="1">Semester 1</option><option value="2">Semester 2</option>
+                            <option value="3">Semester 3</option><option value="4">Semester 4</option>
+                            <option value="5">Semester 5</option><option value="6">Semester 6</option>
+                            <option value="7">Semester 7</option><option value="8">Semester 8</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">CPI / CGPA</label>
+                        <input type="number" id="f-cpi" class="input-field" min="0" max="10" step="0.01" placeholder="e.g. 8.50">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Year of Admission</label>
+                        <input type="number" id="f-year_of_admission" class="input-field" min="2010" max="2030" placeholder="e.g. 2022">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Expected Year of Passing</label>
+                        <input type="number" id="f-year_of_passing" class="input-field" min="2020" max="2035" placeholder="e.g. 2026">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── Address ─── -->
+            <div class="card fade-in" style="margin-bottom:20px; animation-delay:0.2s;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                    <h2 style="font-size:1rem; font-weight:600; color:#1f2937; margin:0;">Address</h2>
+                    <button onclick="saveSection('address')" class="btn-primary" style="width:auto; padding:8px 20px; font-size:0.875rem;">Save</button>
+                </div>
+                <div class="field-grid">
+                    <div class="field-full">
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Locality / Area</label>
+                        <input type="text" id="f-locality" class="input-field" placeholder="Locality or area name">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">City</label>
+                        <input type="text" id="f-city" class="input-field" placeholder="City">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">State</label>
+                        <input type="text" id="f-state" class="input-field" placeholder="State">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">PIN Code</label>
+                        <input type="text" id="f-pincode" class="input-field" placeholder="6-digit PIN">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── Personal Links ─── -->
+            <div class="card fade-in" style="margin-bottom:20px; animation-delay:0.3s;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                    <h2 style="font-size:1rem; font-weight:600; color:#1f2937; margin:0;">Personal Links</h2>
+                    <button onclick="saveLinks()" class="btn-primary" style="width:auto; padding:8px 20px; font-size:0.875rem;">Save</button>
+                </div>
+                <div class="field-grid">
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">LinkedIn URL</label>
+                        <input type="url" id="f-linkedin" class="input-field" placeholder="https://linkedin.com/in/..."></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">GitHub URL</label>
+                        <input type="url" id="f-github" class="input-field" placeholder="https://github.com/..."></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Portfolio / Website</label>
+                        <input type="url" id="f-portfolio" class="input-field" placeholder="https://yoursite.com"></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">LeetCode / Codeforces</label>
+                        <input type="url" id="f-competitive" class="input-field" placeholder="https://leetcode.com/..."></div>
+                </div>
+            </div>
+
+            <!-- ─── Skills ─── -->
+            <div class="card fade-in" style="margin-bottom:20px; animation-delay:0.35s;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                    <h2 style="font-size:1rem; font-weight:600; color:#1f2937; margin:0;">Skills</h2>
+                    <button onclick="saveSkills()" class="btn-primary" style="width:auto; padding:8px 20px; font-size:0.875rem;">Save</button>
+                </div>
+                <div id="skills-list" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; min-height:40px;"></div>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="skill-input" class="input-field" placeholder="Add a skill (e.g. Python, React)" style="flex:1;"
+                           onkeydown="if(event.key==='Enter'){addSkill();event.preventDefault();}">
+                    <button onclick="addSkill()" class="btn-primary" style="width:auto; padding:10px 20px;">+ Add</button>
+                </div>
+            </div>
+
+            <!-- ─── Education Details ─── -->
+            <div class="card fade-in" style="margin-bottom:20px; animation-delay:0.4s;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                    <h2 style="font-size:1rem; font-weight:600; color:#1f2937; margin:0;">Education Details</h2>
+                    <button onclick="saveEducation()" class="btn-primary" style="width:auto; padding:8px 20px; font-size:0.875rem;">Save</button>
+                </div>
+                <!-- 10th -->
+                <p style="font-size:0.8125rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 12px;">10th Standard</p>
+                <div class="field-grid" style="margin-bottom:20px;">
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">School Name</label>
+                        <input type="text" id="edu-10-school" class="input-field" placeholder="School name"></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Board</label>
+                        <input type="text" id="edu-10-board" class="input-field" placeholder="e.g. CBSE, ICSE, State"></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Percentage / CGPA</label>
+                        <input type="text" id="edu-10-score" class="input-field" placeholder="e.g. 92.5%"></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Year of Passing</label>
+                        <input type="number" id="edu-10-year" class="input-field" placeholder="e.g. 2020" min="2000" max="2030"></div>
+                </div>
+                <!-- 12th -->
+                <p style="font-size:0.8125rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 12px;">12th Standard / Diploma</p>
+                <div class="field-grid" style="margin-bottom:20px;">
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">School / College Name</label>
+                        <input type="text" id="edu-12-school" class="input-field" placeholder="School or college name"></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Board</label>
+                        <input type="text" id="edu-12-board" class="input-field" placeholder="e.g. CBSE, State Board"></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Percentage / CGPA</label>
+                        <input type="text" id="edu-12-score" class="input-field" placeholder="e.g. 88%"></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Year of Passing</label>
+                        <input type="number" id="edu-12-year" class="input-field" placeholder="e.g. 2022" min="2000" max="2030"></div>
+                </div>
+            </div>
+
+            <!-- ─── Internship / Experience ─── -->
+            <div class="card fade-in" style="margin-bottom:20px; animation-delay:0.45s;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                    <h2 style="font-size:1rem; font-weight:600; color:#1f2937; margin:0;">Internships &amp; Experience</h2>
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="addExperience()" style="padding:8px 16px; border:1px solid #d1d5db; border-radius:10px; background:#fff; font-size:0.875rem; font-weight:500; cursor:pointer;">+ Add</button>
+                        <button onclick="saveExperience()" class="btn-primary" style="width:auto; padding:8px 20px; font-size:0.875rem;">Save</button>
+                    </div>
+                </div>
+                <div id="experience-list" style="display:flex; flex-direction:column; gap:16px;"></div>
+                <p id="exp-empty" style="font-size:0.875rem; color:#9ca3af; text-align:center; padding:20px 0;">No experience added yet.</p>
+            </div>
+
+            <!-- ─── Family Info ─── -->
+            <div class="card fade-in" style="margin-bottom:20px; animation-delay:0.5s;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                    <h2 style="font-size:1rem; font-weight:600; color:#1f2937; margin:0;">Family Information</h2>
+                    <button onclick="saveFamily()" class="btn-primary" style="width:auto; padding:8px 20px; font-size:0.875rem;">Save</button>
+                </div>
+                <div class="field-grid">
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Father's Name</label>
+                        <input type="text" id="fam-father-name" class="input-field" placeholder="Father's full name"></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Father's Occupation</label>
+                        <input type="text" id="fam-father-occ" class="input-field" placeholder="e.g. Businessman"></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Mother's Name</label>
+                        <input type="text" id="fam-mother-name" class="input-field" placeholder="Mother's full name"></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Mother's Occupation</label>
+                        <input type="text" id="fam-mother-occ" class="input-field" placeholder="e.g. Teacher"></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Annual Family Income</label>
+                        <input type="text" id="fam-income" class="input-field" placeholder="e.g. 5-10 LPA"></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Emergency Contact Number</label>
+                        <input type="tel" id="fam-emergency" class="input-field" placeholder="10-digit number"></div>
+                </div>
+            </div>
+
+            <!-- ─── Placement Status ─── -->
+            <div class="card fade-in" style="animation-delay:0.55s;">
+                <h2 style="font-size:1rem; font-weight:600; color:#1f2937; margin:0 0 16px;">Placement Status</h2>
+                <div id="placement-status-badge"
+                     style="display:inline-flex; align-items:center; gap:8px; padding:8px 16px;
+                            border-radius:12px; font-size:0.875rem; font-weight:600;
+                            background:#f3f4f6; color:#6b7280;">
+                    <span style="width:8px; height:8px; border-radius:50%; background:currentColor;"></span>
+                    <span id="placement-status-text">Loading...</span>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" style="position:fixed; inset:0; z-index:50; background:rgba(255,255,255,0.85);
+     display:flex; align-items:center; justify-content:center;">
+    <div class="spinner" style="width:32px; height:32px; color:#8B2A8B;"></div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container" style="position:fixed; top:24px; right:24px; z-index:60; display:flex; flex-direction:column; gap:12px;"></div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+    Auth.requireRole(['student']);
+
+    // ─── Init ────────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+        const user = Auth.getUser();
+        document.getElementById('sidebar-email').textContent = user?.email || '';
+        document.getElementById('avatar').textContent = (user?.email?.[0] || '?').toUpperCase();
+        document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-IN',
+            { weekday:'long', year:'numeric', month:'short', day:'numeric' });
+
+        await Promise.all([loadProfile(), loadLookups()]);
+        document.getElementById('loading-overlay').style.display = 'none';
+    });
+
+    let profileData = {};
+
+    // ─── Load Profile ────────────────────────────────────────────────────────
+    async function loadProfile() {
+        const res = await Api.get('/students/me');
+        if (res.status !== 'success') { Toast.error('Failed to load profile.'); return; }
+        profileData = res.data;
+        populateForm(profileData);
+        updateCompletionBanner(profileData);
+        updatePlacementBadge(profileData.placement_status);
+    }
+
+    // ─── Load Lookups ─────────────────────────────────────────────────────────
+    async function loadLookups() {
+        const res = await Api.get('/students/lookups');
+        if (res.status !== 'success') return;
+
+        const deptSel = document.getElementById('f-dept_id');
+        res.data.departments.forEach(d => {
+            const o = document.createElement('option');
+            o.value = d.dept_id; o.textContent = `${d.name} (${d.code})`;
+            deptSel.appendChild(o);
+        });
+
+        const progSel = document.getElementById('f-program_id');
+        res.data.programs.forEach(p => {
+            const o = document.createElement('option');
+            o.value = p.program_id; o.textContent = `${p.name} (${p.code})`;
+            progSel.appendChild(o);
+        });
+
+        if (profileData.dept_id)    deptSel.value    = profileData.dept_id;
+        if (profileData.program_id) progSel.value    = profileData.program_id;
+    }
+
+    // ─── Populate form ────────────────────────────────────────────────────────
+    function populateForm(data) {
+        const fields = ['name','roll_no','date_of_birth','gender','category','blood_group',
+                        'current_semester','cpi','year_of_admission','year_of_passing',
+                        'locality','city','state','pincode'];
+        fields.forEach(f => {
+            const el = document.getElementById(`f-${f}`);
+            if (el && data[f] !== null && data[f] !== undefined) el.value = data[f];
+        });
+        const em = document.getElementById('f-email');
+        if (em) em.value = data.email || '';
+
+        // Personal links
+        const links = safeJson(data.personal_links_json);
+        setValue('f-linkedin',    links.linkedin    || '');
+        setValue('f-github',      links.github      || '');
+        setValue('f-portfolio',   links.portfolio   || '');
+        setValue('f-competitive', links.competitive || '');
+
+        // Skills
+        skillsList = Array.isArray(safeJson(data.skills_json))
+            ? safeJson(data.skills_json) : (safeJson(data.skills_json).list || []);
+        renderSkills();
+
+        // Education
+        const edu = safeJson(data.education_details_json);
+        const t10 = edu.tenth  || {};
+        const t12 = edu.twelfth || {};
+        setValue('edu-10-school', t10.school || ''); setValue('edu-10-board', t10.board || '');
+        setValue('edu-10-score',  t10.score  || ''); setValue('edu-10-year',  t10.year  || '');
+        setValue('edu-12-school', t12.school || ''); setValue('edu-12-board', t12.board || '');
+        setValue('edu-12-score',  t12.score  || ''); setValue('edu-12-year',  t12.year  || '');
+
+        // Experience
+        experienceList = Array.isArray(safeJson(data.experiences_json)) ? safeJson(data.experiences_json) : [];
+        renderExperience();
+
+        // Family
+        const fam = safeJson(data.family_info_json);
+        setValue('fam-father-name', fam.father_name || ''); setValue('fam-father-occ', fam.father_occ || '');
+        setValue('fam-mother-name', fam.mother_name || ''); setValue('fam-mother-occ', fam.mother_occ || '');
+        setValue('fam-income',      fam.income      || ''); setValue('fam-emergency',   fam.emergency  || '');
+    }
+
+    function safeJson(v) {
+        if (!v) return {};
+        if (typeof v === 'object') return v;
+        try { return JSON.parse(v); } catch { return {}; }
+    }
+    function setValue(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
+    function getValue(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+    // ─── Save sections ────────────────────────────────────────────────────────
+    const sections = {
+        personal: ['name','roll_no','date_of_birth','gender','category','blood_group'],
+        academic:  ['dept_id','program_id','current_semester','cpi','year_of_admission','year_of_passing'],
+        address:   ['locality','city','state','pincode'],
+    };
+
+    async function saveSection(section) {
+        const payload = {};
+        sections[section].forEach(f => {
+            const el = document.getElementById(`f-${f}`);
+            if (el) payload[f] = el.value || null;
+        });
+        const res = await Api.put('/students/me', payload);
+        res.status === 'success' ? Toast.success(res.message || 'Saved!') : Toast.error(res.message || 'Save failed.');
+        if (res.status === 'success') await loadProfile();
+    }
+
+    async function saveLinks() {
+        const payload = { personal_links_json: {
+            linkedin: getValue('f-linkedin'), github: getValue('f-github'),
+            portfolio: getValue('f-portfolio'), competitive: getValue('f-competitive')
+        }};
+        const res = await Api.put('/students/me', payload);
+        res.status === 'success' ? Toast.success('Links saved!') : Toast.error(res.message || 'Save failed.');
+    }
+
+    // ─── Skills ──────────────────────────────────────────────────────────────
+    let skillsList = [];
+    function addSkill() {
+        const inp = document.getElementById('skill-input');
+        const val = inp.value.trim();
+        if (!val || skillsList.includes(val)) { inp.value = ''; return; }
+        skillsList.push(val); inp.value = ''; renderSkills();
+    }
+    function removeSkill(i) { skillsList.splice(i, 1); renderSkills(); }
+    function renderSkills() {
+        const el = document.getElementById('skills-list');
+        el.innerHTML = skillsList.map((s, i) =>
+            `<span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;
+                border-radius:99px;background:#f5f3ff;color:#6d28d9;font-size:0.8125rem;font-weight:500;">
+                ${s} <button onclick="removeSkill(${i})" style="background:none;border:none;cursor:pointer;
+                color:#6d28d9;font-size:1rem;line-height:1;padding:0;">×</button></span>`
+        ).join('');
+    }
+    async function saveSkills() {
+        const res = await Api.put('/students/me', { skills_json: skillsList });
+        res.status === 'success' ? Toast.success('Skills saved!') : Toast.error(res.message || 'Save failed.');
+    }
+
+    // ─── Education ──────────────────────────────────────────────────────────
+    async function saveEducation() {
+        const payload = { education_details_json: {
+            tenth:   { school: getValue('edu-10-school'), board: getValue('edu-10-board'), score: getValue('edu-10-score'), year: getValue('edu-10-year') },
+            twelfth: { school: getValue('edu-12-school'), board: getValue('edu-12-board'), score: getValue('edu-12-score'), year: getValue('edu-12-year') }
+        }};
+        const res = await Api.put('/students/me', payload);
+        res.status === 'success' ? Toast.success('Education saved!') : Toast.error(res.message || 'Save failed.');
+    }
+
+    // ─── Experience ──────────────────────────────────────────────────────────
+    let experienceList = [];
+    function addExperience() {
+        experienceList.push({ company: '', role: '', type: 'internship', from: '', to: '', description: '' });
+        renderExperience();
+    }
+    function removeExperience(i) { experienceList.splice(i, 1); renderExperience(); }
+    function renderExperience() {
+        const el = document.getElementById('experience-list');
+        const empty = document.getElementById('exp-empty');
+        empty.style.display = experienceList.length ? 'none' : 'block';
+        el.innerHTML = experienceList.map((exp, i) => `
+            <div style="border:1px solid #e5e7eb;border-radius:12px;padding:16px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+                    <span style="font-weight:600;color:#374151;">Entry #${i+1}</span>
+                    <button onclick="removeExperience(${i})" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:0.875rem;">Remove</button>
+                </div>
+                <div class="field-grid">
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Company / Organisation</label>
+                        <input class="input-field" value="${exp.company}" oninput="experienceList[${i}].company=this.value" placeholder="Company name"></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Role / Position</label>
+                        <input class="input-field" value="${exp.role}" oninput="experienceList[${i}].role=this.value" placeholder="e.g. Software Intern"></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Type</label>
+                        <select class="input-field" onchange="experienceList[${i}].type=this.value">
+                            <option value="internship" ${exp.type==='internship'?'selected':''}>Internship</option>
+                            <option value="fulltime" ${exp.type==='fulltime'?'selected':''}>Full-time</option>
+                            <option value="parttime" ${exp.type==='parttime'?'selected':''}>Part-time</option>
+                            <option value="project" ${exp.type==='project'?'selected':''}>Project</option>
+                        </select></div>
+                    <div><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Duration (e.g. Jun 2024 – Aug 2024)</label>
+                        <input class="input-field" value="${exp.duration||''}" oninput="experienceList[${i}].duration=this.value" placeholder="Jun 2024 – Aug 2024"></div>
+                    <div style="grid-column:1/-1;"><label style="display:block;font-size:0.8125rem;font-weight:500;color:#6b7280;margin-bottom:6px;">Description</label>
+                        <textarea class="input-field" rows="2" oninput="experienceList[${i}].description=this.value" placeholder="Brief description of work done...">${exp.description}</textarea></div>
+                </div>
+            </div>`).join('');
+    }
+    async function saveExperience() {
+        const res = await Api.put('/students/me', { experiences_json: experienceList });
+        res.status === 'success' ? Toast.success('Experience saved!') : Toast.error(res.message || 'Save failed.');
+    }
+
+    // ─── Family ──────────────────────────────────────────────────────────────
+    async function saveFamily() {
+        const payload = { family_info_json: {
+            father_name: getValue('fam-father-name'), father_occ: getValue('fam-father-occ'),
+            mother_name: getValue('fam-mother-name'), mother_occ: getValue('fam-mother-occ'),
+            income: getValue('fam-income'), emergency: getValue('fam-emergency')
+        }};
+        const res = await Api.put('/students/me', payload);
+        res.status === 'success' ? Toast.success('Family info saved!') : Toast.error(res.message || 'Save failed.');
+    }
+
+    // ─── Completion banner ────────────────────────────────────────────────────
+    function updateCompletionBanner(data) {
+        const checks = ['name','roll_no','dept_id','program_id','cpi','current_semester','date_of_birth',
+                        'personal_links_json','skills_json','education_details_json'];
+        const filled = checks.filter(f => data[f] !== null && data[f] !== '' && data[f] !== undefined).length;
+        const pct    = Math.round((filled / checks.length) * 100);
+        document.getElementById('completion-bar').style.width = `${pct}%`;
+        document.getElementById('completion-pct').textContent = `${pct}%`;
+        const banner = document.getElementById('completion-banner');
+        banner.style.display = pct < 100 ? 'flex' : 'none';
+    }
+
+    // ─── Placement badge ─────────────────────────────────────────────────────
+    function updatePlacementBadge(status) {
+        const badge = document.getElementById('placement-status-badge');
+        const text  = document.getElementById('placement-status-text');
+        const styles = {
+            not_placed: 'background:#f3f4f6; color:#6b7280;',
+            placed:     'background:#d1fae5; color:#065f46;',
+            opted_out:  'background:#dbeafe; color:#1e40af;',
+        };
+        const labels = { not_placed:'Not Placed', placed:'🎉 Placed', opted_out:'Opted Out' };
+        badge.style.cssText = `display:inline-flex; align-items:center; gap:8px; padding:8px 16px;
+            border-radius:12px; font-size:0.875rem; font-weight:600; ${styles[status] || styles.not_placed}`;
+        text.textContent = labels[status] || 'Not Placed';
+    }
+</script>
+</body>
+</html>

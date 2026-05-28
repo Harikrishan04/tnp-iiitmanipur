@@ -1,0 +1,32 @@
+{
+    "name": "iiitmanipur/tnp-api",
+    "description": "IIIT Manipur TNP Portal — REST API",
+    "require": {
+        "php": "^8.0",
+        "lcobucci/jwt": "^4.1",
+        "phpmailer/phpmailer": "^6.10",
+        "vlucas/phpdotenv": "^5.4",
+        "monolog/monolog": "^2.3",
+        "ramsey/uuid": "^4.2",
+        "respect/validation": "^2.2",
+        "lcobucci/clock": "^2.0 || ^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\Config\\": "config/",
+            "App\\Controllers\\": "controllers/",
+            "App\\Helpers\\": "helpers/",
+            "App\\Middleware\\": "middleware/",
+            "App\\Models\\": "models/",
+            "App\\Routes\\": "routes/",
+            "App\\Services\\": "services/",
+            "TnpPortal\\": "../_legacy/dataRouting/utils/TnpPortal/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "minimum-stability": "stable"
+}

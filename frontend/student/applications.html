@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Applications — TNP Portal</title>
+    <meta name="description" content="Track your job applications on the IIIT Manipur Placement Portal.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        @keyframes fadeInUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        .app-row { animation: fadeInUp 0.35s ease-out both; }
+    </style>
+</head>
+<body style="background:#f9fafb; font-family:Inter,system-ui,sans-serif;">
+
+<div style="display:flex; min-height:100vh;">
+    <!-- Sidebar -->
+    <aside style="width:256px; flex-shrink:0; background:#fff; border-right:1px solid #f3f4f6;
+                  display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto;">
+        <div style="padding:24px; border-bottom:1px solid #f3f4f6;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <img src="../assets/img/iiitm-logo.png" alt="IIIT Manipur"
+                     style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+                <div>
+                    <div style="font-size:0.875rem;font-weight:700;color:#1f2937;">TNP Portal</div>
+                    <div style="font-size:0.75rem;color:#6b7280;">Student Dashboard</div>
+                </div>
+            </div>
+        </div>
+        <nav style="flex:1;padding:16px;display:flex;flex-direction:column;gap:4px;">
+            <a href="profile.html"      style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:12px;color:#4b5563;font-weight:500;font-size:0.875rem;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#fdf2f8';this.style.color='#8B2A8B'" onmouseout="this.style.background='none';this.style.color='#4b5563'">👤 My Profile</a>
+            <a href="jobs.html"         style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:12px;color:#4b5563;font-weight:500;font-size:0.875rem;text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='#fdf2f8';this.style.color='#8B2A8B'" onmouseout="this.style.background='none';this.style.color='#4b5563'">💼 Job Openings</a>
+            <a href="applications.html" style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:12px;background:#fdf2f8;color:#8B2A8B;font-weight:600;font-size:0.875rem;text-decoration:none;">📋 My Applications</a>
+        </nav>
+        <div style="padding:16px;border-top:1px solid #f3f4f6;">
+            <button onclick="Auth.logout()" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:12px;background:none;border:none;cursor:pointer;color:#ef4444;font-size:0.875rem;font-weight:500;">🚪 Logout</button>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+
+        <!-- Header -->
+        <header style="background:#fff;border-bottom:1px solid #f3f4f6;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;">
+            <h1 style="font-size:1.25rem;font-weight:600;color:#1f2937;margin:0;">My Applications</h1>
+            <span style="font-size:0.875rem;color:#9ca3af;">Track your application status</span>
+        </header>
+
+        <main style="flex:1;overflow-y:auto;padding:24px 32px;">
+
+            <!-- Stats row -->
+            <div id="stats-row" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6"></div>
+
+            <!-- Filter tabs -->
+            <div class="flex gap-2 mb-6 overflow-x-auto pb-1">
+                <button class="tab-btn active" data-status="" onclick="setTab(this, '')">All</button>
+                <button class="tab-btn" data-status="applied"       onclick="setTab(this, 'applied')">Applied</button>
+                <button class="tab-btn" data-status="shortlisted"   onclick="setTab(this, 'shortlisted')">Shortlisted</button>
+                <button class="tab-btn" data-status="in_process"    onclick="setTab(this, 'in_process')">In Process</button>
+                <button class="tab-btn" data-status="selected"      onclick="setTab(this, 'selected')">Selected</button>
+                <button class="tab-btn" data-status="offer_accepted" onclick="setTab(this, 'offer_accepted')">Offer Accepted</button>
+                <button class="tab-btn" data-status="withdrawn"     onclick="setTab(this, 'withdrawn')">Withdrawn</button>
+            </div>
+
+            <!-- Applications table / cards -->
+            <div class="card !p-0 overflow-hidden">
+                <table class="w-full text-sm hidden md:table">
+                    <thead class="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                            <th class="text-left px-6 py-4 font-semibold text-gray-600">Company / Role</th>
+                            <th class="text-left px-4 py-4 font-semibold text-gray-600">Type</th>
+                            <th class="text-left px-4 py-4 font-semibold text-gray-600">CTC</th>
+                            <th class="text-left px-4 py-4 font-semibold text-gray-600">Applied On</th>
+                            <th class="text-left px-4 py-4 font-semibold text-gray-600">Status</th>
+                            <th class="px-4 py-4"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="apps-table-body"></tbody>
+                </table>
+
+                <!-- Mobile cards -->
+                <div id="apps-mobile-list" class="md:hidden divide-y divide-gray-100"></div>
+            </div>
+
+            <!-- Empty state -->
+            <div id="empty-state" class="hidden text-center py-20">
+                <div class="text-6xl mb-4">📋</div>
+                <h3 class="text-xl font-semibold text-gray-700">No applications yet</h3>
+                <p class="text-gray-500 mt-2">Browse job openings and start applying!</p>
+                <a href="jobs.html" class="inline-block mt-4 btn-primary !w-auto !px-6">Browse Jobs</a>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="hidden flex items-center justify-center gap-2 mt-6">
+                <button id="prev-btn" onclick="changePage(-1)"
+                        class="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium
+                               text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors">← Previous</button>
+                <span id="page-info" class="px-4 py-2 text-sm text-gray-600"></span>
+                <button id="next-btn" onclick="changePage(1)"
+                        class="px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium
+                               text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors">Next →</button>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- ─── Withdraw Confirm Modal ─── -->
+<div id="withdraw-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeWithdrawModal()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
+        <h3 class="text-xl font-bold text-gray-800 mb-2">Withdraw Application?</h3>
+        <p class="text-gray-500 mb-6">This action cannot be undone. The application status will be set to <strong>Withdrawn</strong>.</p>
+        <div class="flex gap-3">
+            <button onclick="closeWithdrawModal()"
+                    class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
+            <button id="confirm-withdraw-btn" onclick="confirmWithdraw()"
+                    class="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-colors">Yes, Withdraw</button>
+        </div>
+    </div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+    Auth.requireRole(['student']);
+
+    let currentPage   = 1;
+    let totalPages    = 1;
+    let activeStatus  = '';
+    let withdrawId    = null;
+    let allApps       = [];   // cache for client-side tab filtering
+
+    // ─── Status config ────────────────────────────────────────────────────────
+    const STATUS = {
+        applied:       { label: 'Applied',        cls: 'badge-info' },
+        shortlisted:   { label: 'Shortlisted',    cls: 'badge-warning' },
+        in_process:    { label: 'In Process',      cls: 'badge-warning' },
+        selected:      { label: 'Selected',        cls: 'badge-success' },
+        not_selected:  { label: 'Not Selected',   cls: 'badge-error' },
+        withdrawn:     { label: 'Withdrawn',       cls: 'bg-gray-100 text-gray-500' },
+        offer_accepted:{ label: 'Offer Accepted',  cls: 'badge-success' },
+        offer_declined:{ label: 'Offer Declined',  cls: 'badge-error' },
+    };
+
+    // ─── Init ────────────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        Components.renderSidebar('student', 'applications');
+        Components.renderHeader('My Applications');
+        loadApplications();
+    });
+
+    // ─── Load applications ────────────────────────────────────────────────────
+    async function loadApplications(page = 1) {
+        currentPage = page;
+        Components.showLoading();
+
+        const res = await Api.get('/applications/me', { page, per_page: 20 });
+        Components.hideLoading();
+
+        if (res.status !== 'success') {
+            Toast.error(res.message || 'Failed to load applications.');
+            return;
+        }
+
+        allApps    = res.data || [];
+        const meta = res.meta || {};
+        totalPages  = meta.total_pages || 1;
+
+        renderStats(allApps);
+        renderApps(allApps);
+
+        document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
+        document.getElementById('prev-btn').disabled = currentPage <= 1;
+        document.getElementById('next-btn').disabled = currentPage >= totalPages;
+        document.getElementById('pagination').classList.toggle('hidden', totalPages <= 1);
+    }
+
+    // ─── Render stats bar ─────────────────────────────────────────────────────
+    function renderStats(apps) {
+        const counts = {};
+        apps.forEach(a => { counts[a.status] = (counts[a.status] || 0) + 1; });
+
+        const stats = [
+            { label: 'Total',       count: apps.length,                     color: 'text-brand-700' },
+            { label: 'Shortlisted', count: (counts.shortlisted || 0) + (counts.in_process || 0), color: 'text-amber-600' },
+            { label: 'Selected',    count: (counts.selected || 0) + (counts.offer_accepted || 0), color: 'text-emerald-600' },
+            { label: 'Withdrawn',   count: counts.withdrawn || 0,            color: 'text-gray-500' },
+        ];
+
+        document.getElementById('stats-row').innerHTML = stats.map(s => `
+            <div class="card !p-4 text-center">
+                <p class="text-2xl font-bold ${s.color}">${s.count}</p>
+                <p class="text-xs text-gray-500 mt-1">${s.label}</p>
+            </div>`).join('');
+    }
+
+    // ─── Filter by tab ────────────────────────────────────────────────────────
+    function setTab(btn, status) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeStatus = status;
+        const filtered = status ? allApps.filter(a => a.status === status) : allApps;
+        renderApps(filtered);
+    }
+
+    // ─── Render apps ─────────────────────────────────────────────────────────
+    function renderApps(apps) {
+        const tbody  = document.getElementById('apps-table-body');
+        const mobile = document.getElementById('apps-mobile-list');
+        const empty  = document.getElementById('empty-state');
+        const table  = document.querySelector('table');
+
+        if (apps.length === 0) {
+            tbody.innerHTML  = '';
+            mobile.innerHTML = '';
+            table.classList.add('hidden');
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        table.classList.remove('hidden');
+        empty.classList.add('hidden');
+
+        // Desktop table rows
+        tbody.innerHTML = apps.map((app, i) => {
+            const s      = STATUS[app.status] || { label: app.status, cls: 'badge-info' };
+            const date   = new Date(app.applied_at).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
+            const ctc    = app.ctc_lpa ? `₹${app.ctc_lpa} LPA` : '—';
+            const canWd  = app.status === 'applied';
+
+            return `
+            <tr class="app-row border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
+                style="animation-delay:${i*0.04}s">
+                <td class="px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-lg flex-shrink-0">
+                            ${app.company_logo_url ? `<img src="${app.company_logo_url}" class="w-full h-full object-contain rounded-lg">` : '🏢'}
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800 text-sm">${app.title}</p>
+                            <p class="text-xs text-gray-500">${app.company_name || '—'}</p>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-4 py-4 text-gray-600">${app.job_type_label || '—'}</td>
+                <td class="px-4 py-4 text-green-600 font-medium">${ctc}</td>
+                <td class="px-4 py-4 text-gray-500 text-xs">${date}</td>
+                <td class="px-4 py-4">
+                    <span class="badge ${s.cls}">${s.label}</span>
+                    ${app.is_shortlisted ? '<span class="ml-1 text-xs text-amber-600">⭐ Shortlisted</span>' : ''}
+                </td>
+                <td class="px-4 py-4">
+                    ${canWd ? `<button onclick="openWithdrawModal('${app.application_id}')"
+                                       class="text-xs text-red-500 hover:text-red-700 font-medium transition-colors">
+                                  Withdraw
+                               </button>` : ''}
+                </td>
+            </tr>`;
+        }).join('');
+
+        // Mobile cards
+        mobile.innerHTML = apps.map((app, i) => {
+            const s    = STATUS[app.status] || { label: app.status, cls: 'badge-info' };
+            const date = new Date(app.applied_at).toLocaleDateString('en-IN', {day:'numeric',month:'short'});
+            const ctc  = app.ctc_lpa ? `₹${app.ctc_lpa} LPA` : (app.stipend_pm ? `₹${app.stipend_pm}/mo` : null);
+
+            return `
+            <div class="app-row p-4" style="animation-delay:${i*0.04}s">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-lg flex-shrink-0">
+                        ${app.company_logo_url ? `<img src="${app.company_logo_url}" class="w-full h-full object-contain rounded-xl">` : '🏢'}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <p class="font-semibold text-gray-800 text-sm truncate">${app.title}</p>
+                                <p class="text-xs text-gray-500">${app.company_name || '—'} ${ctc ? `· ${ctc}` : ''}</p>
+                            </div>
+                            <span class="badge ${s.cls} flex-shrink-0">${s.label}</span>
+                        </div>
+                        <div class="flex items-center justify-between mt-2">
+                            <span class="text-xs text-gray-400">Applied ${date}</span>
+                            ${app.status === 'applied' ? `
+                            <button onclick="openWithdrawModal('${app.application_id}')"
+                                    class="text-xs text-red-500 font-medium">Withdraw</button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ─── Withdraw flow ────────────────────────────────────────────────────────
+    function openWithdrawModal(appId) {
+        withdrawId = appId;
+        document.getElementById('withdraw-modal').classList.remove('hidden');
+    }
+
+    function closeWithdrawModal() {
+        withdrawId = null;
+        document.getElementById('withdraw-modal').classList.add('hidden');
+    }
+
+    async function confirmWithdraw() {
+        if (!withdrawId) return;
+        const btn = document.getElementById('confirm-withdraw-btn');
+        btn.disabled = true;
+        btn.textContent = 'Withdrawing...';
+
+        const res = await Api.put(`/applications/${withdrawId}/withdraw`);
+        closeWithdrawModal();
+
+        if (res.status === 'success') {
+            Toast.success('Application withdrawn.');
+            loadApplications(currentPage);
+        } else {
+            Toast.error(res.message || 'Withdraw failed.');
+        }
+        btn.disabled = false;
+        btn.textContent = 'Yes, Withdraw';
+    }
+
+    function changePage(dir) {
+        if (currentPage + dir >= 1 && currentPage + dir <= totalPages) {
+            loadApplications(currentPage + dir);
+        }
+    }
+</script>
+</body>
+</html>

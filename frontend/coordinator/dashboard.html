@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coordinator Dashboard — TNP Portal</title>
+    <meta name="description" content="Coordinator Dashboard for IIIT Manipur Training & Placement Portal.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        #app-layout { display: flex; min-height: 100vh; }
+        #sidebar     { width: 256px; flex-shrink: 0; }
+        #main-area   { flex: 1; overflow-y: auto; }
+
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .fade-in { animation: fadeIn 0.4s ease-out both; }
+
+        .nav-link { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px;
+                    color:#4b5563; font-weight:500; font-size:0.875rem; text-decoration:none;
+                    transition:all 0.2s; }
+        .nav-link:hover { background:#fdf2f8; color:#8B2A8B; }
+        .nav-link.active { background:#fdf2f8; color:#8B2A8B; font-weight:600; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 32px; }
+        .stat-card { background: #fff; padding: 24px; border-radius: 16px; border: 1px solid #f3f4f6; transition: transform 0.2s, box-shadow 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+
+        .activity-feed { background: #fff; border-radius: 16px; border: 1px solid #f3f4f6; padding: 24px; }
+        .activity-item { display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid #f3f4f6; }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    </style>
+</head>
+<body style="background:#f9fafb; font-family:Inter,system-ui,sans-serif;">
+
+<div id="app-layout">
+    <!-- ═══ Sidebar ═══ -->
+    <aside id="sidebar" style="background:#fff; border-right:1px solid #f3f4f6; display:flex; flex-direction:column;">
+        <div style="padding:24px; border-bottom:1px solid #f3f4f6;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <img src="../assets/img/iiitm-logo.png" alt="IIIT Manipur"
+                     style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                <div>
+                    <div style="font-size:0.875rem; font-weight:700; color:#1f2937;">TNP Portal</div>
+                    <div style="font-size:0.75rem; color:#6b7280;">Coordinator Panel</div>
+                </div>
+            </div>
+        </div>
+
+        <nav style="flex:1; padding:16px; display:flex; flex-direction:column; gap:4px;">
+            <a href="dashboard.html"           class="nav-link active">📊 <span>Dashboard</span></a>
+            <a href="verify-students.html"     class="nav-link">👤 <span>Verify Students</span></a>
+            <a href="verify-recruiters.html"   class="nav-link">🏢 <span>Verify Recruiters</span></a>
+            <a href="verify-jobs.html"         class="nav-link">💼 <span>Verify Jobs</span></a>
+        </nav>
+
+        <div style="padding:16px; border-top:1px solid #f3f4f6;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <div id="avatar" style="width:32px; height:32px; border-radius:50%; background:#fce7f3;
+                     display:flex; align-items:center; justify-content:center;
+                     font-weight:700; font-size:0.875rem; color:#8B2A8B;">?</div>
+                <div style="flex:1; min-width:0;">
+                    <div id="sidebar-email" style="font-size:0.8125rem; font-weight:500; color:#1f2937;
+                          white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+                    <div style="font-size:0.75rem; color:#6b7280;">Coordinator</div>
+                </div>
+            </div>
+            <button onclick="Auth.logout()"
+                    style="width:100%; display:flex; align-items:center; gap:10px; padding:10px 16px;
+                           border-radius:12px; background:none; border:none; cursor:pointer;
+                           color:#ef4444; font-size:0.875rem; font-weight:500;
+                           transition:background 0.2s;"
+                    onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
+                🚪 <span>Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ═══ Main ═══ -->
+    <div id="main-area">
+        <header style="background:#fff; border-bottom:1px solid #f3f4f6; padding:16px 32px;
+                        display:flex; align-items:center; justify-content:between; position:sticky; top:0; z-index:10;">
+            <h1 style="font-size:1.25rem; font-weight:600; color:#1f2937; margin:0;">Dashboard Overview</h1>
+            <span id="today-date" style="font-size:0.875rem; color:#9ca3af; margin-left:auto;"></span>
+        </header>
+
+        <main style="padding:32px; max-width:1200px; margin:0 auto;">
+
+            <!-- Stats -->
+            <div class="stats-grid fade-in">
+                <div class="stat-card" style="cursor:pointer;" onclick="location.href='verify-students.html'">
+                    <div style="font-size:0.875rem; font-weight:500; color:#6b7280; margin-bottom:8px;">Pending Students</div>
+                    <div id="stat-pending-students" style="font-size:2rem; font-weight:700; color:#1f2937; margin-bottom:4px;">0</div>
+                    <div style="font-size:0.75rem; color:#10b981; font-weight:500;">Needs verification</div>
+                </div>
+                <div class="stat-card" style="cursor:pointer;" onclick="location.href='verify-recruiters.html'">
+                    <div style="font-size:0.875rem; font-weight:500; color:#6b7280; margin-bottom:8px;">Pending Recruiters</div>
+                    <div id="stat-pending-recruiters" style="font-size:2rem; font-weight:700; color:#1f2937; margin-bottom:4px;">0</div>
+                    <div style="font-size:0.75rem; color:#10b981; font-weight:500;">Needs approval</div>
+                </div>
+                <div class="stat-card" style="cursor:pointer;" onclick="location.href='verify-jobs.html'">
+                    <div style="font-size:0.875rem; font-weight:500; color:#6b7280; margin-bottom:8px;">Pending Jobs</div>
+                    <div id="stat-pending-jobs" style="font-size:2rem; font-weight:700; color:#1f2937; margin-bottom:4px;">0</div>
+                    <div style="font-size:0.75rem; color:#10b981; font-weight:500;">Needs opening approval</div>
+                </div>
+            </div>
+
+            <!-- Activity Logs -->
+            <div class="activity-feed fade-in" style="animation-delay:0.1s;">
+                <h2 style="font-size:1.125rem; font-weight:600; color:#1f2937; margin:0 0 20px;">Recent Verification Log</h2>
+                <div id="logs-container" style="display:flex; flex-direction:column;">
+                    <div style="padding:40px 0; text-align:center; color:#6b7280;">Loading activity logs...</div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<div id="loading-overlay" style="position:fixed; inset:0; z-index:50; background:rgba(255,255,255,0.85);
+     display:flex; align-items:center; justify-content:center;">
+    <div class="spinner" style="width:32px; height:32px; color:#8B2A8B;"></div>
+</div>
+
+<div id="toast-container" style="position:fixed; top:24px; right:24px; z-index:60; display:flex; flex-direction:column; gap:12px;"></div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+    Auth.requireRole(['coordinator', 'admin']);
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const user = Auth.getUser();
+        document.getElementById('sidebar-email').textContent = user?.email || '';
+        document.getElementById('avatar').textContent = (user?.email?.[0] || '?').toUpperCase();
+        document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-IN',
+            { weekday:'long', year:'numeric', month:'short', day:'numeric' });
+
+        await loadDashboardData();
+        document.getElementById('loading-overlay').style.display = 'none';
+    });
+
+    async function loadDashboardData() {
+        // Fetch stats (we can use the verifications API filtering by pending status)
+        const [studentRes, recruiterRes, jobRes, logRes] = await Promise.all([
+            Api.get('/verifications', { entity_type: 'student', status: 'pending', limit: 1 }),
+            Api.get('/verifications', { entity_type: 'recruiter', status: 'pending', limit: 1 }),
+            Api.get('/verifications', { entity_type: 'job', status: 'pending', limit: 1 }),
+            Api.get('/verifications', { limit: 10 }) // lists latest verifications
+        ]);
+
+        if (studentRes.status === 'success') {
+            document.getElementById('stat-pending-students').textContent = studentRes.meta.total;
+        }
+        if (recruiterRes.status === 'success') {
+            document.getElementById('stat-pending-recruiters').textContent = recruiterRes.meta.total;
+        }
+        if (jobRes.status === 'success') {
+            document.getElementById('stat-pending-jobs').textContent = jobRes.meta.total;
+        }
+
+        // Render activity list
+        const logsContainer = document.getElementById('logs-container');
+        logsContainer.innerHTML = '';
+
+        if (logRes.status === 'success' && logRes.data.length > 0) {
+            logRes.data.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'activity-item';
+
+                let icon = '📝';
+                let iconBg = '#f3f4f6';
+                let color = '#4b5563';
+
+                if (item.status === 'verified') { icon = '✅'; iconBg = '#d1fae5'; color = '#10b981'; }
+                else if (item.status === 'rejected') { icon = '❌'; iconBg = '#fde8e8'; color = '#ef4444'; }
+                else if (item.status === 'resubmit') { icon = '🔄'; iconBg = '#fef3c7'; color = '#d97706'; }
+                else if (item.status === 'pending') { icon = '⏳'; iconBg = '#e0f2fe'; color = '#0284c7'; }
+
+                const formattedDate = new Date(item.updated_at).toLocaleString('en-IN', {
+                    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                });
+
+                el.innerHTML = `
+                    <div class="activity-icon" style="background:${iconBg}; color:${color};">${icon}</div>
+                    <div style="flex:1;">
+                        <div style="font-size:0.875rem; font-weight:600; color:#1f2937;">
+                            ${item.entity_name || 'Unknown Entity'} 
+                            <span style="font-weight:400; color:#6b7280;">(${item.entity_type})</span>
+                        </div>
+                        <div style="font-size:0.8125rem; color:#4b5563; margin-top:2px;">
+                            Status updated to <span style="font-weight:600; color:${color};">${item.status}</span>
+                            ${item.remark ? `— <span style="font-style:italic; color:#6b7280;">"${item.remark}"</span>` : ''}
+                        </div>
+                        <div style="font-size:0.75rem; color:#9ca3af; margin-top:4px;">${formattedDate}</div>
+                    </div>
+                `;
+                logsContainer.appendChild(el);
+            });
+        } else {
+            logsContainer.innerHTML = '<div style="padding:40px 0; text-align:center; color:#6b7280;">No recent activity found.</div>';
+        }
+    }
+</script>
+</body>
+</html>

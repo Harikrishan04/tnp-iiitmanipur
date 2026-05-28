@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Sessions — TNP Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        #app-layout { display: flex; min-height: 100vh; }
+        #sidebar     { width: 256px; flex-shrink: 0; }
+        #main-area   { flex: 1; overflow-y: auto; }
+
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .fade-in { animation: fadeIn 0.4s ease-out both; }
+
+        .nav-link { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px;
+                    color:#4b5563; font-weight:500; font-size:0.875rem; text-decoration:none;
+                    transition:all 0.2s; }
+        .nav-link:hover { background:#f5f3ff; color:#8B2A8B; }
+        .nav-link.active { background:#f5f3ff; color:#8B2A8B; font-weight:600; }
+
+        .panel-card { background:#fff; border-radius:20px; border:1px solid #f3f4f6; padding:24px;
+                      box-shadow:0 4px 6px -1px rgba(0,0,0,0.02); }
+    </style>
+</head>
+<body style="background:#f9fafb; font-family:Inter,system-ui,sans-serif;">
+
+<div id="app-layout">
+    <!-- ═══ Sidebar ═══ -->
+    <aside id="sidebar" style="background:#fff; border-right:1px solid #f3f4f6; display:flex; flex-direction:column;">
+        <div style="padding:24px; border-bottom:1px solid #f3f4f6;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <img src="../assets/img/iiitm-logo.png" alt="IIIT Manipur"
+                     style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                <div>
+                    <div style="font-size:0.875rem; font-weight:700; color:#1f2937;">TNP Portal</div>
+                    <div style="font-size:0.75rem; color:#6b7280;">Admin Panel</div>
+                </div>
+            </div>
+        </div>
+
+        <nav style="flex:1; padding:16px; display:flex; flex-direction:column; gap:4px;">
+            <a href="dashboard.html"           class="nav-link">📊 <span>Dashboard</span></a>
+            <a href="sessions.html"            class="nav-link active">🗓️ <span>Sessions</span></a>
+            <a href="announcements.html"       class="nav-link">📢 <span>Announcements</span></a>
+            <a href="users.html"               class="nav-link">👥 <span>Users</span></a>
+        </nav>
+
+        <div style="padding:16px; border-top:1px solid #f3f4f6;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <div id="avatar" style="width:32px; height:32px; border-radius:50%; background:#f5f3ff;
+                     display:flex; align-items:center; justify-content:center;
+                     font-weight:700; font-size:0.875rem; color:#8B2A8B;">A</div>
+                <div style="flex:1; min-width:0;">
+                    <div id="sidebar-email" style="font-size:0.8125rem; font-weight:500; color:#1f2937;
+                          white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+                    <div style="font-size:0.75rem; color:#6b7280;">Administrator</div>
+                </div>
+            </div>
+            <button onclick="Auth.logout()"
+                    style="width:100%; display:flex; align-items:center; gap:10px; padding:10px 16px;
+                           border-radius:12px; background:none; border:none; cursor:pointer;
+                           color:#ef4444; font-size:0.875rem; font-weight:500;
+                           transition:background 0.2s;"
+                    onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
+                🚪 <span>Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ═══ Main ═══ -->
+    <div id="main-area">
+        <header style="background:#fff; border-bottom:1px solid #f3f4f6; padding:16px 32px;
+                        display:flex; align-items:center; justify-content:between; position:sticky; top:0; z-index:10;">
+            <h1 style="font-size:1.25rem; font-weight:600; color:#1f2937; margin:0;">Placement Sessions</h1>
+        </header>
+
+        <main style="padding:32px; max-width:1200px; margin:0 auto;" class="fade-in">
+            <div style="display:grid; grid-template-columns:1fr 2fr; gap:32px;">
+                
+                <!-- Left: Create Session Form -->
+                <div>
+                    <div class="panel-card">
+                        <h2 style="font-size:1.125rem; font-weight:600; color:#1f2937; margin-top:0; margin-bottom:20px;">Add New Session</h2>
+                        
+                        <form id="create-session-form" style="display:flex; flex-direction:column; gap:16px;">
+                            <div>
+                                <label style="display:block; font-size:0.75rem; font-weight:600; color:#4b5563; text-transform:uppercase; margin-bottom:6px;">Session Label</label>
+                                <input type="text" id="label" placeholder="e.g. 2026-27" required
+                                       style="width:100%; padding:10px 14px; border:1px solid #d1d5db; border-radius:10px; font-size:0.875rem;">
+                            </div>
+                            
+                            <div>
+                                <label style="display:block; font-size:0.75rem; font-weight:600; color:#4b5563; text-transform:uppercase; margin-bottom:6px;">Start Date</label>
+                                <input type="date" id="start_date" required
+                                       style="width:100%; padding:10px 14px; border:1px solid #d1d5db; border-radius:10px; font-size:0.875rem;">
+                            </div>
+
+                            <div>
+                                <label style="display:block; font-size:0.75rem; font-weight:600; color:#4b5563; text-transform:uppercase; margin-bottom:6px;">End Date</label>
+                                <input type="date" id="end_date" required
+                                       style="width:100%; padding:10px 14px; border:1px solid #d1d5db; border-radius:10px; font-size:0.875rem;">
+                            </div>
+
+                            <button type="submit"
+                                    style="width:100%; padding:12px; background:linear-gradient(135deg, #8B2A8B, #C03854);
+                                           border:none; border-radius:10px; color:#fff; font-weight:600; font-size:0.875rem;
+                                           cursor:pointer; transition:opacity 0.2s;"
+                                    onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                                Create Session
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Right: Sessions Table -->
+                <div>
+                    <div class="panel-card">
+                        <h2 style="font-size:1.125rem; font-weight:600; color:#1f2937; margin-top:0; margin-bottom:20px;">Existing Sessions</h2>
+                        
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.875rem;">
+                                <thead>
+                                    <tr style="border-bottom:2px solid #f3f4f6; color:#6b7280; font-weight:600;">
+                                        <th style="padding:12px 16px;">Label</th>
+                                        <th style="padding:12px 16px;">Start Date</th>
+                                        <th style="padding:12px 16px;">End Date</th>
+                                        <th style="padding:12px 16px;">Status</th>
+                                        <th style="padding:12px 16px; text-align:right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sessions-table-body">
+                                    <tr>
+                                        <td colspan="5" style="text-align:center; padding:32px; color:#6b7280;">Loading placement sessions...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+</div>
+
+<div id="loading-overlay" style="position:fixed; inset:0; z-index:50; background:rgba(255,255,255,0.85);
+     display:flex; align-items:center; justify-content:center;">
+    <div class="spinner" style="width:32px; height:32px; color:#8B2A8B;"></div>
+</div>
+
+<div id="toast-container" style="position:fixed; top:24px; right:24px; z-index:60; display:flex; flex-direction:column; gap:12px;"></div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+    Auth.requireRole(['admin']);
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const user = Auth.getUser();
+        document.getElementById('sidebar-email').textContent = user?.email || '';
+        document.getElementById('avatar').textContent = (user?.email?.[0] || 'A').toUpperCase();
+
+        await loadSessions();
+        document.getElementById('loading-overlay').style.display = 'none';
+
+        // Submit form handler
+        document.getElementById('create-session-form').addEventListener('submit', handleCreateSession);
+    });
+
+    async function loadSessions() {
+        const res = await Api.get('/admin/sessions');
+        const tbody = document.getElementById('sessions-table-body');
+        tbody.innerHTML = '';
+
+        if (res.status === 'success') {
+            if (res.data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:32px; color:#6b7280;">No placement sessions configured yet.</td></tr>';
+                return;
+            }
+
+            res.data.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid #f3f4f6';
+                
+                const statusBadge = s.is_active 
+                    ? `<span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:99px; background:#f3e8ff; color:#8b2a8b; font-weight:600; font-size:0.75rem;">● Active</span>`
+                    : `<span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:99px; background:#f3f4f6; color:#6b7280; font-weight:500; font-size:0.75rem;">Inactive</span>`;
+
+                const actionButton = s.is_active 
+                    ? `<button disabled style="padding:6px 12px; border-radius:8px; background:#f3f4f6; color:#9ca3af; border:none; font-size:0.75rem; font-weight:600; cursor:not-allowed;">Active</button>`
+                    : `<button onclick="activateSession('${s.session_id}')" style="padding:6px 12px; border-radius:8px; background:#8b2a8b; color:#fff; border:none; font-size:0.75rem; font-weight:600; cursor:pointer; transition:opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Activate</button>`;
+
+                tr.innerHTML = `
+                    <td style="padding:16px; font-weight:600; color:#1f2937;">${s.label}</td>
+                    <td style="padding:16px; color:#4b5563;">${new Date(s.start_date).toLocaleDateString('en-IN')}</td>
+                    <td style="padding:16px; color:#4b5563;">${new Date(s.end_date).toLocaleDateString('en-IN')}</td>
+                    <td style="padding:16px;">${statusBadge}</td>
+                    <td style="padding:16px; text-align:right;">${actionButton}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:32px; color:#ef4444;">Failed to load sessions.</td></tr>';
+        }
+    }
+
+    async function handleCreateSession(e) {
+        e.preventDefault();
+        const payload = {
+            label: document.getElementById('label').value,
+            start_date: document.getElementById('start_date').value,
+            end_date: document.getElementById('end_date').value
+        };
+
+        document.getElementById('loading-overlay').style.display = 'flex';
+        const res = await Api.post('/admin/sessions', payload);
+        document.getElementById('loading-overlay').style.display = 'none';
+
+        if (res.status === 'success') {
+            Toast.success('Placement session created successfully.');
+            document.getElementById('create-session-form').reset();
+            await loadSessions();
+        } else {
+            Toast.error(res.message || 'Failed to create placement session.');
+        }
+    }
+
+    async function activateSession(sessionId) {
+        if (!confirm('Are you sure you want to activate this session? This will deactivate all other sessions.')) {
+            return;
+        }
+
+        document.getElementById('loading-overlay').style.display = 'flex';
+        const res = await Api.put(`/admin/sessions/${sessionId}/activate`);
+        document.getElementById('loading-overlay').style.display = 'none';
+
+        if (res.status === 'success') {
+            Toast.success('Session activated successfully.');
+            await loadSessions();
+        } else {
+            Toast.error(res.message || 'Failed to activate session.');
+        }
+    }
+</script>
+</body>
+</html>

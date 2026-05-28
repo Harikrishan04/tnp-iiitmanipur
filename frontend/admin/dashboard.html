@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — TNP Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        #app-layout { display: flex; min-height: 100vh; }
+        #sidebar     { width: 256px; flex-shrink: 0; }
+        #main-area   { flex: 1; overflow-y: auto; }
+
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .fade-in { animation: fadeIn 0.4s ease-out both; }
+
+        .nav-link { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px;
+                    color:#4b5563; font-weight:500; font-size:0.875rem; text-decoration:none;
+                    transition:all 0.2s; }
+        .nav-link:hover { background:#f5f3ff; color:#8B2A8B; }
+        .nav-link.active { background:#f5f3ff; color:#8B2A8B; font-weight:600; }
+
+        /* Premium Stat Card */
+        .stat-card { background:#fff; border-radius:20px; border:1px solid #f3f4f6; padding:24px;
+                     box-shadow:0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.01);
+                     transition:all 0.3s; display:flex; flex-direction:column; gap:12px; }
+        .stat-card:hover { transform:translateY(-2px); box-shadow:0 12px 20px -8px rgba(139,42,139,0.15); }
+
+        /* Dashboard grid layout */
+        .dashboard-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:24px; margin-bottom:32px; }
+        
+        /* Bar Chart */
+        .chart-container { background:#fff; border-radius:20px; border:1px solid #f3f4f6; padding:24px; margin-bottom:32px; }
+        .bar-chart { display:flex; flex-direction:column; gap:16px; margin-top:20px; }
+        .bar-row { display:flex; align-items:center; gap:16px; }
+        .bar-label { width:80px; font-size:0.875rem; font-weight:600; color:#374151; }
+        .bar-track { flex:1; height:24px; background:#f3f4f6; border-radius:6px; overflow:hidden; position:relative; }
+        .bar-fill { height:100%; background:linear-gradient(90deg, #8B2A8B, #C03854); border-radius:6px; width:0; transition:width 1s ease-out; }
+        .bar-value { font-size:0.875rem; font-weight:600; color:#1f2937; width:40px; text-align:right; }
+    </style>
+</head>
+<body style="background:#f9fafb; font-family:Inter,system-ui,sans-serif;">
+
+<div id="app-layout">
+    <!-- ═══ Sidebar ═══ -->
+    <aside id="sidebar" style="background:#fff; border-right:1px solid #f3f4f6; display:flex; flex-direction:column;">
+        <div style="padding:24px; border-bottom:1px solid #f3f4f6;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <img src="../assets/img/iiitm-logo.png" alt="IIIT Manipur"
+                     style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                <div>
+                    <div style="font-size:0.875rem; font-weight:700; color:#1f2937;">TNP Portal</div>
+                    <div style="font-size:0.75rem; color:#6b7280;">Admin Panel</div>
+                </div>
+            </div>
+        </div>
+
+        <nav style="flex:1; padding:16px; display:flex; flex-direction:column; gap:4px;">
+            <a href="dashboard.html"           class="nav-link active">📊 <span>Dashboard</span></a>
+            <a href="sessions.html"            class="nav-link">🗓️ <span>Sessions</span></a>
+            <a href="announcements.html"       class="nav-link">📢 <span>Announcements</span></a>
+            <a href="users.html"               class="nav-link">👥 <span>Users</span></a>
+        </nav>
+
+        <div style="padding:16px; border-top:1px solid #f3f4f6;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <div id="avatar" style="width:32px; height:32px; border-radius:50%; background:#f5f3ff;
+                     display:flex; align-items:center; justify-content:center;
+                     font-weight:700; font-size:0.875rem; color:#8B2A8B;">A</div>
+                <div style="flex:1; min-width:0;">
+                    <div id="sidebar-email" style="font-size:0.8125rem; font-weight:500; color:#1f2937;
+                          white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+                    <div style="font-size:0.75rem; color:#6b7280;">Administrator</div>
+                </div>
+            </div>
+            <button onclick="Auth.logout()"
+                    style="width:100%; display:flex; align-items:center; gap:10px; padding:10px 16px;
+                           border-radius:12px; background:none; border:none; cursor:pointer;
+                           color:#ef4444; font-size:0.875rem; font-weight:500;
+                           transition:background 0.2s;"
+                    onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
+                🚪 <span>Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ═══ Main ═══ -->
+    <div id="main-area">
+        <header style="background:#fff; border-bottom:1px solid #f3f4f6; padding:16px 32px;
+                        display:flex; align-items:center; justify-content:between; position:sticky; top:0; z-index:10;">
+            <h1 style="font-size:1.25rem; font-weight:600; color:#1f2937; margin:0;">TNP Overview Statistics</h1>
+            <span id="today-date" style="font-size:0.875rem; color:#9ca3af; margin-left:auto;"></span>
+        </header>
+
+        <main style="padding:32px; max-width:1200px; margin:0 auto;">
+
+            <!-- Active Session Banner -->
+            <div id="active-session-banner" style="display:none; background:linear-gradient(135deg, #8B2A8B, #C03854);
+                 padding:16px 24px; border-radius:16px; color:#fff; display:flex; align-items:center; justify-content:between; margin-bottom:32px;">
+                <div>
+                    <span style="font-size:0.75rem; text-transform:uppercase; font-weight:700; opacity:0.8; letter-spacing:1px;">Active Session</span>
+                    <h2 id="active-session-label" style="font-size:1.25rem; margin:4px 0 0; font-weight:700;">-</h2>
+                </div>
+                <div style="background:rgba(255,255,255,0.2); padding:8px 16px; border-radius:99px; font-size:0.8125rem; font-weight:600;">
+                    LIVE
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="dashboard-grid fade-in">
+                <!-- Card 1 -->
+                <div class="stat-card">
+                    <div style="display:flex; justify-content:between; align-items:center;">
+                        <span style="font-size:0.875rem; font-weight:500; color:#6b7280;">Placed Students</span>
+                        <span style="font-size:1.5rem;">🎓</span>
+                    </div>
+                    <div style="font-size:2rem; font-weight:700; color:#1f2937;" id="stat-placed">0</div>
+                    <div style="font-size:0.75rem; color:#10b981; font-weight:500;">Confirmed offers</div>
+                </div>
+                <!-- Card 2 -->
+                <div class="stat-card">
+                    <div style="display:flex; justify-content:between; align-items:center;">
+                        <span style="font-size:0.875rem; font-weight:500; color:#6b7280;">Average CTC</span>
+                        <span style="font-size:1.5rem;">💰</span>
+                    </div>
+                    <div style="font-size:2rem; font-weight:700; color:#1f2937;" id="stat-avg-ctc">0 LPA</div>
+                    <div style="font-size:0.75rem; color:#6b7280; font-weight:500;">Across all sectors</div>
+                </div>
+                <!-- Card 3 -->
+                <div class="stat-card">
+                    <div style="display:flex; justify-content:between; align-items:center;">
+                        <span style="font-size:0.875rem; font-weight:500; color:#6b7280;">Highest CTC</span>
+                        <span style="font-size:1.5rem;">🚀</span>
+                    </div>
+                    <div style="font-size:2rem; font-weight:700; color:#1f2937;" id="stat-max-ctc">0 LPA</div>
+                    <div style="font-size:0.75rem; color:#8B2A8B; font-weight:500;">Maximum package offered</div>
+                </div>
+                <!-- Card 4 -->
+                <div class="stat-card">
+                    <div style="display:flex; justify-content:between; align-items:center;">
+                        <span style="font-size:0.875rem; font-weight:500; color:#6b7280;">Active Jobs</span>
+                        <span style="font-size:1.5rem;">💼</span>
+                    </div>
+                    <div style="font-size:2rem; font-weight:700; color:#1f2937;" id="stat-active-jobs">0</div>
+                    <div style="font-size:0.75rem; color:#d97706; font-weight:500;">Accepting applications</div>
+                </div>
+            </div>
+
+            <!-- Branch Placement Chart -->
+            <div class="chart-container fade-in">
+                <h3 style="margin:0; font-size:1.125rem; font-weight:600; color:#1f2937;">Placement Count by Branch</h3>
+                <div class="bar-chart" id="branch-chart-list">
+                    <div style="text-align:center; padding:20px; color:#6b7280;">No placement records to display.</div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<div id="loading-overlay" style="position:fixed; inset:0; z-index:50; background:rgba(255,255,255,0.85);
+     display:flex; align-items:center; justify-content:center;">
+    <div class="spinner" style="width:32px; height:32px; color:#8B2A8B;"></div>
+</div>
+
+<div id="toast-container" style="position:fixed; top:24px; right:24px; z-index:60; display:flex; flex-direction:column; gap:12px;"></div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+    Auth.requireRole(['admin']);
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const user = Auth.getUser();
+        document.getElementById('sidebar-email').textContent = user?.email || '';
+        document.getElementById('avatar').textContent = (user?.email?.[0] || 'A').toUpperCase();
+        document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-IN',
+            { weekday:'long', year:'numeric', month:'short', day:'numeric' });
+
+        await Promise.all([loadSessions(), loadStats()]);
+        document.getElementById('loading-overlay').style.display = 'none';
+    });
+
+    async function loadSessions() {
+        const res = await Api.get('/admin/sessions');
+        if (res.status === 'success') {
+            const active = res.data.find(s => s.is_active);
+            if (active) {
+                document.getElementById('active-session-banner').style.display = 'flex';
+                document.getElementById('active-session-label').textContent = `${active.label} Placement Session`;
+            }
+        }
+    }
+
+    async function loadStats() {
+        const res = await Api.get('/admin/stats');
+        if (res.status === 'success') {
+            const data = res.data;
+            document.getElementById('stat-placed').textContent = data.placed_count;
+            document.getElementById('stat-avg-ctc').textContent = `${data.avg_ctc.toFixed(1)} LPA`;
+            document.getElementById('stat-max-ctc').textContent = `${data.max_ctc.toFixed(1)} LPA`;
+            document.getElementById('stat-active-jobs').textContent = data.active_jobs;
+
+            // Render Branch Chart
+            const chartList = document.getElementById('branch-chart-list');
+            chartList.innerHTML = '';
+            if (data.branch_stats && data.branch_stats.length > 0) {
+                // Find maximum placed value to determine percentages
+                const maxPlaced = Math.max(...data.branch_stats.map(b => b.placed), 1);
+                
+                data.branch_stats.forEach(b => {
+                    const pct = (b.placed / maxPlaced) * 100;
+                    const row = document.createElement('div');
+                    row.className = 'bar-row';
+                    row.innerHTML = `
+                        <div class="bar-label">${b.branch}</div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width: ${pct}%"></div>
+                        </div>
+                        <div class="bar-value">${b.placed}</div>
+                    `;
+                    chartList.appendChild(row);
+                });
+            } else {
+                chartList.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">No placement records to display.</div>';
+            }
+        } else {
+            Toast.error('Failed to load dashboard statistics.');
+        }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post a Job — TNP Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        /* Layout */
+        #app-layout { display: flex; min-height: 100vh; }
+        #sidebar     { width: 256px; flex-shrink: 0; }
+        #main-area   { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .fade-in { animation: fadeIn 0.4s ease-out both; }
+
+        .nav-link { display:flex; align-items:center; gap:12px; padding:10px 16px; border-radius:12px;
+                    color:#4b5563; font-weight:500; font-size:0.875rem; text-decoration:none;
+                    transition:all 0.2s; }
+        .nav-link:hover { background:#fdf2f8; color:#8B2A8B; }
+        .nav-link.active { background:#fdf2f8; color:#8B2A8B; font-weight:600; }
+        
+        /* Grid for form fields */
+        .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+        @media(max-width:640px){ .field-grid { grid-template-columns:1fr; } }
+        .field-full { grid-column: 1 / -1; }
+        
+        .multi-select-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .multi-select-chip { padding: 4px 12px; border-radius: 99px; font-size: 0.8125rem; font-weight: 500;
+                             background: #f3f4f6; color: #4b5563; cursor: pointer; transition: all 0.2s;
+                             border: 1px solid transparent; user-select: none; }
+        .multi-select-chip.selected { background: #fdf2f8; color: #8B2A8B; border-color: #fbcfe8; }
+    </style>
+</head>
+<body style="background:#f9fafb; font-family:Inter,system-ui,sans-serif;">
+
+<div id="app-layout">
+    <!-- Sidebar -->
+    <aside id="sidebar" style="background:#fff; border-right:1px solid #f3f4f6; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto;">
+        <div style="padding:24px; border-bottom:1px solid #f3f4f6;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <img src="../assets/img/iiitm-logo.png" alt="IIIT Manipur" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                <div>
+                    <div style="font-size:0.875rem; font-weight:700; color:#1f2937;">TNP Portal</div>
+                    <div style="font-size:0.75rem; color:#6b7280;">Recruiter Dashboard</div>
+                </div>
+            </div>
+        </div>
+        <nav style="flex:1; padding:16px; display:flex; flex-direction:column; gap:4px;">
+            <a href="profile.html"    class="nav-link">🏢 <span>Company Profile</span></a>
+            <a href="post-job.html"   class="nav-link active">📝 <span>Post a Job</span></a>
+            <a href="my-jobs.html"    class="nav-link">📊 <span>My Postings</span></a>
+        </nav>
+        <div style="padding:16px; border-top:1px solid #f3f4f6;">
+            <button onclick="Auth.logout()" style="width:100%; display:flex; align-items:center; gap:10px; padding:10px 16px; border-radius:12px; background:none; border:none; cursor:pointer; color:#ef4444; font-size:0.875rem; font-weight:500; transition:background 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
+                🚪 <span>Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <div id="main-area">
+        <header style="background:#fff; border-bottom:1px solid #f3f4f6; padding:16px 32px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10;">
+            <h1 style="font-size:1.25rem; font-weight:600; color:#1f2937; margin:0;" id="page-title">Post a New Job</h1>
+        </header>
+
+        <main style="padding:32px; max-width:900px; margin:0 auto; width:100%;">
+            
+            <div class="card fade-in" style="margin-bottom:24px; padding:24px;">
+                <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:16px; margin-bottom:24px; display:flex; gap:12px; align-items:flex-start;">
+                    <span style="font-size:1.25rem;">ℹ️</span>
+                    <div>
+                        <p style="margin:0 0 4px; font-weight:600; color:#1e40af;">Creating a Draft</p>
+                        <p style="margin:0; font-size:0.875rem; color:#1e3a8a;">This will save the job as a draft. You can edit it from "My Postings" before submitting it for the coordinator's review.</p>
+                    </div>
+                </div>
+
+                <div class="field-grid">
+                    <div class="field-full">
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Job Title *</label>
+                        <input type="text" id="j-title" class="input-field" placeholder="E.g. Software Development Engineer (SDE) - I">
+                    </div>
+                    
+                    <div class="field-full">
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Job Description *</label>
+                        <textarea id="j-description" class="input-field" rows="6" placeholder="Detailed responsibilities, requirements, etc."></textarea>
+                    </div>
+                    
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Job Type *</label>
+                        <select id="j-job_type_id" class="input-field">
+                            <option value="">Select Job Type</option>
+                            <!-- Populated via JS -->
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Location</label>
+                        <input type="text" id="j-location" class="input-field" placeholder="E.g. Bangalore, India">
+                    </div>
+
+                    <!-- Salary Section -->
+                    <div class="field-full" style="border-top:1px solid #f3f4f6; margin-top:12px; padding-top:20px;">
+                        <h3 style="font-size:1rem; font-weight:600; color:#1f2937; margin:0 0 16px;">Compensation</h3>
+                    </div>
+                    
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">CTC (in LPA)</label>
+                        <input type="number" id="j-ctc_lpa" class="input-field" step="0.01" min="0" placeholder="E.g. 15.5">
+                    </div>
+                    
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Stipend (per month)</label>
+                        <input type="number" id="j-stipend_pm" class="input-field" step="1" min="0" placeholder="E.g. 40000">
+                    </div>
+                    
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Salary Breakdown / Type Details</label>
+                        <input type="text" id="j-salary_type" class="input-field" placeholder="E.g. Base + Bonus + ESOPs">
+                    </div>
+
+                    <!-- Eligibility Section -->
+                    <div class="field-full" style="border-top:1px solid #f3f4f6; margin-top:12px; padding-top:20px;">
+                        <h3 style="font-size:1rem; font-weight:600; color:#1f2937; margin:0 0 16px;">Eligibility Criteria</h3>
+                    </div>
+                    
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Minimum CPI / CGPA</label>
+                        <input type="number" id="j-min_cpi" class="input-field" step="0.01" min="0" max="10" placeholder="E.g. 7.5">
+                    </div>
+                    
+                    <div>
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Allowed Year of Passing</label>
+                        <input type="number" id="j-allowed_year_of_passing" class="input-field" min="2020" max="2035" placeholder="E.g. 2026">
+                    </div>
+                    
+                    <div class="field-full">
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280;">Allowed Departments (Leave empty for all)</label>
+                        <div id="departments-container" class="multi-select-container">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                    
+                    <div class="field-full">
+                        <label style="display:block; font-size:0.8125rem; font-weight:500; color:#6b7280;">Allowed Programs (Leave empty for all)</label>
+                        <div id="programs-container" class="multi-select-container">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                    
+                    <div class="field-full" style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
+                        <button onclick="window.location.href='my-jobs.html'" class="btn-secondary" style="width:auto; padding:12px 24px;">Cancel</button>
+                        <button onclick="saveJobDraft()" id="save-btn" class="btn-primary" style="width:auto; padding:12px 32px;">Save Draft</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" style="position:fixed; inset:0; z-index:50; background:rgba(255,255,255,0.85); display:flex; align-items:center; justify-content:center;">
+    <div class="spinner" style="width:32px; height:32px; color:#8B2A8B;"></div>
+</div>
+<!-- Toast container -->
+<div id="toast-container" style="position:fixed; top:24px; right:24px; z-index:60; display:flex; flex-direction:column; gap:12px;"></div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+    Auth.requireRole(['recruiter']);
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const editingJobId = urlParams.get('id');
+    
+    let selectedDepts = new Set();
+    let selectedPrograms = new Set();
+    
+    document.addEventListener('DOMContentLoaded', async () => {
+        document.getElementById('loading-overlay').style.display = 'flex';
+        const user = Auth.getUser();
+        document.getElementById('sidebar-email').textContent = user?.email || '';
+        
+        await loadLookups();
+        if (editingJobId) {
+            document.getElementById('page-title').textContent = 'Edit Job Draft';
+            await loadExistingJob(editingJobId);
+        }
+        
+        document.getElementById('loading-overlay').style.display = 'none';
+    });
+    
+    async function loadLookups() {
+        const res = await Api.get('/recruiters/me/lookups');
+        if (res.status !== 'success') { Toast.error('Failed to load form options.'); return; }
+        
+        const jobTypeSel = document.getElementById('j-job_type_id');
+        res.data.job_types.forEach(jt => {
+            const o = document.createElement('option');
+            o.value = jt.job_type_id; o.textContent = jt.name;
+            jobTypeSel.appendChild(o);
+        });
+        
+        const deptsContainer = document.getElementById('departments-container');
+        res.data.departments.forEach(d => {
+            const chip = document.createElement('div');
+            chip.className = 'multi-select-chip';
+            chip.textContent = d.name;
+            chip.dataset.id = d.dept_id;
+            chip.onclick = () => {
+                chip.classList.toggle('selected');
+                if (chip.classList.contains('selected')) selectedDepts.add(d.dept_id);
+                else selectedDepts.delete(d.dept_id);
+            };
+            deptsContainer.appendChild(chip);
+        });
+        
+        const progsContainer = document.getElementById('programs-container');
+        res.data.programs.forEach(p => {
+            const chip = document.createElement('div');
+            chip.className = 'multi-select-chip';
+            chip.textContent = p.name;
+            chip.dataset.id = p.program_id;
+            chip.onclick = () => {
+                chip.classList.toggle('selected');
+                if (chip.classList.contains('selected')) selectedPrograms.add(p.program_id);
+                else selectedPrograms.delete(p.program_id);
+            };
+            progsContainer.appendChild(chip);
+        });
+    }
+
+    async function loadExistingJob(jobId) {
+        const res = await Api.get(`/jobs/${jobId}`);
+        if (res.status !== 'success') { Toast.error('Failed to load job draft.'); return; }
+        
+        const job = res.data;
+        const textFields = ['title', 'description', 'job_type_id', 'location', 'ctc_lpa', 'stipend_pm', 'salary_type', 'min_cpi', 'allowed_year_of_passing'];
+        textFields.forEach(f => {
+            const el = document.getElementById(`j-${f}`);
+            if (el && job[f] !== null) el.value = job[f];
+        });
+        
+        if (job.allowed_branches_json) {
+            let branches = [];
+            try { branches = JSON.parse(job.allowed_branches_json); } catch(e){}
+            branches.forEach(bId => {
+                const chip = document.querySelector(`#departments-container .multi-select-chip[data-id="${bId}"]`);
+                if (chip) { chip.classList.add('selected'); selectedDepts.add(bId); }
+            });
+        }
+        
+        if (job.allowed_programs_json) {
+            let programs = [];
+            try { programs = JSON.parse(job.allowed_programs_json); } catch(e){}
+            programs.forEach(pId => {
+                const chip = document.querySelector(`#programs-container .multi-select-chip[data-id="${pId}"]`);
+                if (chip) { chip.classList.add('selected'); selectedPrograms.add(pId); }
+            });
+        }
+    }
+
+    async function saveJobDraft() {
+        const payload = {
+            title: document.getElementById('j-title').value,
+            description: document.getElementById('j-description').value,
+            job_type_id: document.getElementById('j-job_type_id').value,
+            location: document.getElementById('j-location').value,
+            ctc_lpa: document.getElementById('j-ctc_lpa').value ? parseFloat(document.getElementById('j-ctc_lpa').value) : null,
+            stipend_pm: document.getElementById('j-stipend_pm').value ? parseFloat(document.getElementById('j-stipend_pm').value) : null,
+            salary_type: document.getElementById('j-salary_type').value,
+            min_cpi: document.getElementById('j-min_cpi').value ? parseFloat(document.getElementById('j-min_cpi').value) : null,
+            allowed_year_of_passing: document.getElementById('j-allowed_year_of_passing').value ? parseInt(document.getElementById('j-allowed_year_of_passing').value) : null,
+            allowed_branches_json: Array.from(selectedDepts),
+            allowed_programs_json: Array.from(selectedPrograms)
+        };
+        
+        if (!payload.title || !payload.description || !payload.job_type_id) {
+            Toast.error('Title, Description, and Job Type are required.');
+            return;
+        }
+
+        document.getElementById('save-btn').disabled = true;
+        document.getElementById('save-btn').textContent = 'Saving...';
+        
+        let res;
+        if (editingJobId) {
+            res = await Api.put(`/recruiters/me/jobs/${editingJobId}`, payload);
+        } else {
+            res = await Api.post('/recruiters/me/jobs', payload);
+        }
+        
+        document.getElementById('save-btn').disabled = false;
+        document.getElementById('save-btn').textContent = 'Save Draft';
+        
+        if (res.status === 'success') {
+            Toast.success('Job draft saved successfully!');
+            setTimeout(() => window.location.href = 'my-jobs.html', 1000);
+        } else {
+            Toast.error(res.message || 'Failed to save job draft.');
+        }
+    }
+</script>
+</body>
+</html>

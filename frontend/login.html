@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — IIIT Manipur Placement Portal</title>
+    <meta name="description" content="Sign in to the IIIT Manipur Training & Placement Portal. Students, recruiters, and coordinators can access their dashboards.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/app.css">
+    <style>
+        /* Login-specific animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.6s ease-out; }
+        .animate-slide-in   { animation: slideInRight 0.5s ease-out; }
+        .animate-delay-1    { animation-delay: 0.1s; animation-fill-mode: backwards; }
+        .animate-delay-2    { animation-delay: 0.2s; animation-fill-mode: backwards; }
+        .animate-delay-3    { animation-delay: 0.3s; animation-fill-mode: backwards; }
+
+        /* OTP input letter-spacing */
+        #otp-input { letter-spacing: 0.5em; text-align: center; }
+    </style>
+</head>
+<body class="min-h-screen bg-white">
+
+    <div class="min-h-screen grid lg:grid-cols-5">
+
+        <!-- ═══ Left Panel — Branding ═══ -->
+        <div class="lg:col-span-3 glass-panel flex flex-col items-center justify-center p-8 lg:p-16 text-white relative overflow-hidden">
+            <!-- Decorative circles -->
+            <div class="absolute -top-20 -left-20 w-72 h-72 bg-white/5 rounded-full"></div>
+            <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-white/5 rounded-full"></div>
+
+            <div class="relative z-10 text-center space-y-6 animate-fade-in-up">
+                <div class="w-48 h-48 mx-auto bg-white/15 rounded-full flex items-center justify-center shadow-2xl backdrop-blur-sm">
+                    <img src="assets/img/iiitm-logo.png" alt="IIIT Manipur" class="w-40 h-40 object-contain">
+                </div>
+                <div>
+                    <h1 class="text-4xl lg:text-5xl font-bold tracking-tight">IIIT Manipur</h1>
+                    <h2 class="text-xl lg:text-2xl font-light mt-2 opacity-90">Placement Portal</h2>
+                </div>
+                <p class="text-lg opacity-75 max-w-md mx-auto">
+                    Connecting talent with opportunities — bridging the gap between academia and industry.
+                </p>
+            </div>
+        </div>
+
+        <!-- ═══ Right Panel — Login Form ═══ -->
+        <div class="lg:col-span-2 flex flex-col items-center justify-center p-8 lg:p-12">
+            <div class="w-full max-w-sm space-y-8">
+
+                <div class="text-center animate-fade-in-up">
+                    <h1 id="form-title" class="text-3xl font-bold text-gray-800">Welcome Back</h1>
+                    <p id="form-subtitle" class="text-gray-500 mt-2">Sign in to your placement portal</p>
+                </div>
+
+                <!-- ─── Alert Messages ─── -->
+                <div id="alert-container" class="hidden"></div>
+
+                <!-- ═══ STEP 1: Email + Role ═══ -->
+                <div id="step-email" class="space-y-6 animate-fade-in-up animate-delay-1">
+
+                    <!-- Role Tabs -->
+                    <div class="flex bg-gray-100 rounded-xl p-1.5 shadow-inner" id="role-tabs">
+                        <button type="button" data-role="student"
+                                class="role-tab flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-300 text-gray-500">
+                            Student
+                        </button>
+                        <button type="button" data-role="recruiter"
+                                class="role-tab flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-300 text-gray-500">
+                            Recruiter
+                        </button>
+                        <button type="button" data-role="coordinator"
+                                class="role-tab flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-300 text-gray-500">
+                            Coordinator
+                        </button>
+                        <button type="button" data-role="admin" id="admin-tab" style="display:none;"
+                                class="role-tab flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-300 text-gray-500">
+                            Admin
+                        </button>
+                    </div>
+
+                    <!-- Email Input -->
+                    <div class="space-y-2">
+                        <label for="email-input" id="email-label" class="block text-sm font-medium text-gray-700">
+                            College Email Address
+                        </label>
+                        <input type="email" id="email-input" required
+                               class="input-field"
+                               placeholder="yourname@iiitmanipur.ac.in">
+                    </div>
+
+                    <!-- Send OTP Button -->
+                    <button type="button" id="send-otp-btn" class="btn-primary" onclick="handleSendOtp()">
+                        <span id="send-otp-text">Send OTP</span>
+                        <span id="send-otp-spinner" class="hidden">
+                            <span class="spinner mr-2"></span> Sending...
+                        </span>
+                    </button>
+                </div>
+
+                <!-- ═══ STEP 2: OTP Verification ═══ -->
+                <div id="step-otp" class="hidden space-y-6">
+
+                    <!-- Info banner -->
+                    <div id="otp-info" class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 flex items-start gap-3">
+                        <span class="text-lg mt-0.5">📧</span>
+                        <div>
+                            OTP sent to <strong id="otp-email-display"></strong>
+                            as <strong id="otp-role-display" class="capitalize"></strong>
+                        </div>
+                    </div>
+
+                    <!-- OTP Input -->
+                    <div class="space-y-2">
+                        <label for="otp-input" class="block text-sm font-medium text-gray-700">Enter OTP</label>
+                        <input type="text" id="otp-input" maxlength="6" required
+                               class="input-field"
+                               placeholder="000000"
+                               pattern="[0-9]{6}"
+                               autocomplete="one-time-code"
+                               inputmode="numeric">
+                    </div>
+
+                    <!-- Verify Button -->
+                    <button type="button" id="verify-otp-btn" class="btn-primary" onclick="handleVerifyOtp()">
+                        <span id="verify-otp-text">Verify OTP</span>
+                        <span id="verify-otp-spinner" class="hidden">
+                            <span class="spinner mr-2"></span> Verifying...
+                        </span>
+                    </button>
+
+                    <!-- Resend / Back -->
+                    <div class="text-center space-y-3 text-sm">
+                        <div id="resend-section">
+                            <span class="text-gray-500">Didn't receive it?</span>
+                            <button type="button" id="resend-btn" onclick="handleResendOtp()"
+                                    class="text-brand-700 font-medium hover:underline ml-1">
+                                Resend OTP
+                            </button>
+                        </div>
+                        <div id="timer-section" class="hidden text-gray-400">
+                            ⏳ Resend available in <span id="countdown" class="font-semibold">60</span>s
+                        </div>
+                        <div class="border-t border-gray-100 pt-3">
+                            <button type="button" onclick="goBackToEmail()"
+                                    class="text-gray-500 hover:text-gray-700 transition-colors">
+                                ← Back to email entry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Scripts (order matters: config → auth → api → page logic) ─── -->
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script>
+        // ─── State ───────────────────────────────────────────────────────────────
+        let selectedRole = 'student';
+        let currentEmail = '';
+        let resendTimer  = null;
+
+        // ─── Init ────────────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            // If already authenticated, redirect to dashboard
+            if (Auth.isAuthenticated()) {
+                Auth.redirectToDashboard();
+                return;
+            }
+
+            // Set up role tabs
+            document.querySelectorAll('.role-tab').forEach(tab => {
+                tab.addEventListener('click', () => selectRole(tab.dataset.role));
+            });
+
+            // Set default role
+            selectRole('student');
+
+            // Enter key handling
+            document.getElementById('email-input').addEventListener('keydown', e => {
+                if (e.key === 'Enter') handleSendOtp();
+            });
+
+            // Show admin tab if secret query param is present
+            if (window.location.search.includes('admin=true')) {
+                document.getElementById('admin-tab').style.display = 'block';
+            }
+
+            document.getElementById('otp-input').addEventListener('keydown', e => {
+                if (e.key === 'Enter') handleVerifyOtp();
+            });
+        });
+
+        // ─── Role Selection ──────────────────────────────────────────────────────
+        function selectRole(role) {
+            selectedRole = role;
+
+            // Update tab styles
+            document.querySelectorAll('.role-tab').forEach(tab => {
+                if (tab.dataset.role === role) {
+                    tab.classList.add('bg-gradient-to-r', 'from-brand-700', 'to-brand-500', 'text-white', 'shadow-md');
+                    tab.classList.remove('text-gray-500');
+                } else {
+                    tab.classList.remove('bg-gradient-to-r', 'from-brand-700', 'to-brand-500', 'text-white', 'shadow-md');
+                    tab.classList.add('text-gray-500');
+                }
+            });
+
+            // Update email label
+            const labels = {
+                student:     'College Email (@iiitmanipur.ac.in)',
+                recruiter:   'Official Company Email',
+                coordinator: 'Official Email',
+                admin:       'Admin Email'
+            };
+            document.getElementById('email-label').textContent = labels[role] || 'Email Address';
+        }
+
+        // ─── Send OTP ────────────────────────────────────────────────────────────
+        async function handleSendOtp() {
+            const email = document.getElementById('email-input').value.trim();
+
+            if (!email) {
+                showAlert('Please enter your email address.', 'error');
+                return;
+            }
+
+            setButtonLoading('send-otp', true);
+            hideAlert();
+
+            const response = await Api.post('/auth/login', {
+                email: email,
+                role: selectedRole,
+            });
+
+            setButtonLoading('send-otp', false);
+
+            if (response.status === 'success') {
+                currentEmail = email;
+                showOtpStep();
+                showAlert(response.message || 'OTP sent successfully!', 'success');
+                startResendTimer();
+            } else {
+                showAlert(response.message || 'Failed to send OTP.', 'error');
+            }
+        }
+
+        // ─── Verify OTP ──────────────────────────────────────────────────────────
+        async function handleVerifyOtp() {
+            const otp = document.getElementById('otp-input').value.trim();
+
+            if (!otp || !/^\d{6}$/.test(otp)) {
+                showAlert('Please enter a valid 6-digit OTP.', 'error');
+                return;
+            }
+
+            setButtonLoading('verify-otp', true);
+            hideAlert();
+
+            const response = await Api.post('/auth/verify-otp', {
+                email: currentEmail,
+                otp: otp,
+                role: selectedRole,
+            });
+
+            setButtonLoading('verify-otp', false);
+
+            if (response.status === 'success' && response.data) {
+                // Store session
+                Auth.setSession(response.data.token, response.data.user);
+                showAlert('Login successful! Redirecting...', 'success');
+
+                // Redirect after brief delay
+                setTimeout(() => Auth.redirectToDashboard(), 800);
+            } else {
+                showAlert(response.message || 'OTP verification failed.', 'error');
+            }
+        }
+
+        // ─── Resend OTP ──────────────────────────────────────────────────────────
+        async function handleResendOtp() {
+            setButtonLoading('send-otp', true);
+            hideAlert();
+
+            const response = await Api.post('/auth/login', {
+                email: currentEmail,
+                role: selectedRole,
+            });
+
+            setButtonLoading('send-otp', false);
+
+            if (response.status === 'success') {
+                showAlert('OTP resent successfully!', 'success');
+                startResendTimer();
+            } else {
+                showAlert(response.message || 'Failed to resend OTP.', 'error');
+            }
+        }
+
+        // ─── UI Helpers ──────────────────────────────────────────────────────────
+        function showOtpStep() {
+            document.getElementById('step-email').classList.add('hidden');
+            document.getElementById('step-otp').classList.remove('hidden');
+            document.getElementById('step-otp').classList.add('animate-slide-in');
+            document.getElementById('otp-email-display').textContent = currentEmail;
+            document.getElementById('otp-role-display').textContent  = selectedRole;
+            document.getElementById('form-title').textContent    = 'Verify OTP';
+            document.getElementById('form-subtitle').textContent = 'Enter the 6-digit code sent to your email';
+            document.getElementById('otp-input').focus();
+        }
+
+        function goBackToEmail() {
+            document.getElementById('step-otp').classList.add('hidden');
+            document.getElementById('step-email').classList.remove('hidden');
+            document.getElementById('form-title').textContent    = 'Welcome Back';
+            document.getElementById('form-subtitle').textContent = 'Sign in to your placement portal';
+            hideAlert();
+            if (resendTimer) clearInterval(resendTimer);
+        }
+
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alert-container');
+            const colors = {
+                success: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                error:   'bg-red-50 text-red-800 border-red-200',
+                info:    'bg-blue-50 text-blue-800 border-blue-200',
+            };
+            const icons = { success: '✓', error: '✕', info: 'ℹ' };
+
+            container.className = `border rounded-xl p-4 text-sm flex items-center gap-3 animate-fade-in-up ${colors[type] || colors.info}`;
+            container.innerHTML = `<span class="text-lg">${icons[type] || icons.info}</span><span>${message}</span>`;
+        }
+
+        function hideAlert() {
+            document.getElementById('alert-container').className = 'hidden';
+        }
+
+        function setButtonLoading(prefix, loading) {
+            const text    = document.getElementById(`${prefix}-text`);
+            const spinner = document.getElementById(`${prefix}-spinner`);
+            const btn     = document.getElementById(`${prefix}-btn`) ||
+                            document.getElementById(`${prefix}-otp-btn`);
+
+            if (text)    text.classList.toggle('hidden', loading);
+            if (spinner) spinner.classList.toggle('hidden', !loading);
+            if (btn)     btn.disabled = loading;
+        }
+
+        function startResendTimer() {
+            let timeLeft = APP_CONFIG.OTP_COOLDOWN;
+            const resendSection = document.getElementById('resend-section');
+            const timerSection  = document.getElementById('timer-section');
+            const countdown     = document.getElementById('countdown');
+
+            if (resendSection) resendSection.classList.add('hidden');
+            if (timerSection)  timerSection.classList.remove('hidden');
+
+            resendTimer = setInterval(() => {
+                timeLeft--;
+                if (countdown) countdown.textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(resendTimer);
+                    if (resendSection) resendSection.classList.remove('hidden');
+                    if (timerSection)  timerSection.classList.add('hidden');
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

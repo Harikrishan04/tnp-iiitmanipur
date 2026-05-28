@@ -1,0 +1,12 @@
+/logs/*
+!/logs/.gitkeep
+/api/logs/*
+!/api/logs/.gitkeep
+/api/vendor/
+/node_modules/
+.env
+.env.*
+!.env.example
+*.log
+/tailwindcss
+cookies.txt

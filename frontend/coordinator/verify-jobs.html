@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Jobs — TNP Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        #app-layout { display: flex; min-height: 100vh; }
+        #sidebar     { width: 256px; flex-shrink: 0; }
+        #main-area   { flex: 1; overflow-y: auto; }
+
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .fade-in { animation: fadeIn 0.4s ease-out both; }
+
+        .nav-link { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px;
+                    color:#4b5563; font-weight:500; font-size:0.875rem; text-decoration:none;
+                    transition:all 0.2s; }
+        .nav-link:hover { background:#fdf2f8; color:#8B2A8B; }
+        .nav-link.active { background:#fdf2f8; color:#8B2A8B; font-weight:600; }
+
+        /* Modern Table styling */
+        .table-card { background:#fff; border-radius:16px; border:1px solid #f3f4f6; overflow:hidden; }
+        table { width:100%; border-collapse:collapse; text-align:left; }
+        th { background:#f9fafb; padding:16px 24px; font-size:0.75rem; font-weight:600; color:#4b5563; text-transform:uppercase; border-bottom:1px solid #f3f4f6; }
+        td { padding:16px 24px; font-size:0.875rem; color:#1f2937; border-bottom:1px solid #f3f4f6; }
+        tr:hover { background:#faf5ff; }
+
+        /* Badge design */
+        .badge { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:99px; font-size:0.75rem; font-weight:600; }
+        .badge-pending { background:#e0f2fe; color:#0369a1; }
+        .badge-verified { background:#d1fae5; color:#065f46; }
+        .badge-rejected { background:#fde8e8; color:#9b1c1c; }
+        .badge-resubmit { background:#fef3c7; color:#92400e; }
+        .badge-draft { background:#f3f4f6; color:#4b5563; }
+
+        /* Modal Side Panel */
+        .side-panel-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:40; display:none; justify-content:flex-end; }
+        .side-panel { width:500px; background:#fff; height:100%; box-shadow:-10px 0 25px -5px rgba(0,0,0,0.1); display:flex; flex-direction:column;
+                      transform:translateX(100%); transition:transform 0.3s ease-out; }
+        .side-panel.open { transform:translateX(0); }
+    </style>
+</head>
+<body style="background:#f9fafb; font-family:Inter,system-ui,sans-serif;">
+
+<div id="app-layout">
+    <!-- ═══ Sidebar ═══ -->
+    <aside id="sidebar" style="background:#fff; border-right:1px solid #f3f4f6; display:flex; flex-direction:column;">
+        <div style="padding:24px; border-bottom:1px solid #f3f4f6;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <img src="../assets/img/iiitm-logo.png" alt="IIIT Manipur"
+                     style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                <div>
+                    <div style="font-size:0.875rem; font-weight:700; color:#1f2937;">TNP Portal</div>
+                    <div style="font-size:0.75rem; color:#6b7280;">Coordinator Panel</div>
+                </div>
+            </div>
+        </div>
+
+        <nav style="flex:1; padding:16px; display:flex; flex-direction:column; gap:4px;">
+            <a href="dashboard.html"           class="nav-link">📊 <span>Dashboard</span></a>
+            <a href="verify-students.html"     class="nav-link">👤 <span>Verify Students</span></a>
+            <a href="verify-recruiters.html"   class="nav-link">🏢 <span>Verify Recruiters</span></a>
+            <a href="verify-jobs.html"         class="nav-link active">💼 <span>Verify Jobs</span></a>
+        </nav>
+
+        <div style="padding:16px; border-top:1px solid #f3f4f6;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <div id="avatar" style="width:32px; height:32px; border-radius:50%; background:#fce7f3;
+                     display:flex; align-items:center; justify-content:center;
+                     font-weight:700; font-size:0.875rem; color:#8B2A8B;">?</div>
+                <div style="flex:1; min-width:0;">
+                    <div id="sidebar-email" style="font-size:0.8125rem; font-weight:500; color:#1f2937;
+                          white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+                    <div style="font-size:0.75rem; color:#6b7280;">Coordinator</div>
+                </div>
+            </div>
+            <button onclick="Auth.logout()"
+                    style="width:100%; display:flex; align-items:center; gap:10px; padding:10px 16px;
+                           border-radius:12px; background:none; border:none; cursor:pointer;
+                           color:#ef4444; font-size:0.875rem; font-weight:500;
+                           transition:background 0.2s;"
+                    onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
+                🚪 <span>Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ═══ Main ═══ -->
+    <div id="main-area">
+        <header style="background:#fff; border-bottom:1px solid #f3f4f6; padding:16px 32px;
+                        display:flex; align-items:center; justify-content:between; position:sticky; top:0; z-index:10;">
+            <h1 style="font-size:1.25rem; font-weight:600; color:#1f2937; margin:0;">Job Verification</h1>
+            <span id="today-date" style="font-size:0.875rem; color:#9ca3af; margin-left:auto;"></span>
+        </header>
+
+        <main style="padding:32px; max-width:1200px; margin:0 auto;">
+
+            <!-- Filters -->
+            <div style="display:flex; gap:16px; margin-bottom:24px; align-items:center;">
+                <select id="filter-status" onchange="loadVerifications()" class="input-field" style="width:200px; margin:0;">
+                    <option value="">All Statuses</option>
+                    <option value="pending" selected>Pending Verification</option>
+                    <option value="verified">Verified</option>
+                    <option value="resubmit">Resubmit Requested</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+                <div style="margin-left:auto; display:flex; gap:8px;">
+                    <span style="font-size:0.875rem; color:#6b7280;" id="records-count">Found 0 records</span>
+                </div>
+            </div>
+
+            <!-- Table Card -->
+            <div class="table-card fade-in">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Job Title</th>
+                            <th>Company Name</th>
+                            <th>Salary / Type</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="job-table-body">
+                        <tr>
+                            <td colspan="5" style="text-align:center; padding:40px; color:#6b7280;">Loading job verifications...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<!-- Side Panel for Verification Details -->
+<div id="panel-overlay" class="side-panel-overlay" onclick="closePanel(event)">
+    <div class="side-panel" onclick="event.stopPropagation()">
+        <!-- Header -->
+        <div style="padding:24px; border-bottom:1px solid #f3f4f6; display:flex; align-items:center; justify-content:space-between;">
+            <h3 style="margin:0; font-size:1.125rem; font-weight:600; color:#1f2937;">Verify Job Posting</h3>
+            <button onclick="hidePanel()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#9ca3af;">&times;</button>
+        </div>
+
+        <!-- Scrollable details body -->
+        <div style="flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:20px;">
+            <div style="display:flex; align-items:center; gap:16px;">
+                <div id="panel-avatar" style="width:56px; height:56px; border-radius:50%; background:#fce7f3;
+                     display:flex; align-items:center; justify-content:center;
+                     font-weight:700; font-size:1.5rem; color:#8B2A8B;">?</div>
+                <div>
+                    <h4 id="panel-job-title" style="margin:0 0 4px; font-size:1.125rem; font-weight:600; color:#1f2937;">Job Title</h4>
+                    <span id="panel-company" style="font-size:0.875rem; color:#6b7280;">Company Name</span>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; border-top:1px solid #f3f4f6; padding-top:16px;">
+                <div>
+                    <label style="font-size:0.75rem; color:#6b7280; font-weight:500;">Job Type</label>
+                    <div id="panel-job-type" style="font-size:0.875rem; font-weight:600; color:#1f2937; margin-top:4px;">-</div>
+                </div>
+                <div>
+                    <label style="font-size:0.75rem; color:#6b7280; font-weight:500;">Salary / Package</label>
+                    <div id="panel-salary" style="font-size:0.875rem; font-weight:600; color:#1f2937; margin-top:4px;">-</div>
+                </div>
+                <div>
+                    <label style="font-size:0.75rem; color:#6b7280; font-weight:500;">Minimum CPI</label>
+                    <div id="panel-min-cpi" style="font-size:0.875rem; font-weight:600; color:#1f2937; margin-top:4px;">-</div>
+                </div>
+                <div>
+                    <label style="font-size:0.75rem; color:#6b7280; font-weight:500;">Eligible Branch(es)</label>
+                    <div id="panel-branches" style="font-size:0.875rem; font-weight:600; color:#1f2937; margin-top:4px;">-</div>
+                </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:0.75rem; color:#6b7280; font-weight:500;">Job Description</label>
+                <div id="panel-desc" style="font-size:0.875rem; color:#4b5563; line-height:1.5; white-space:pre-line;">-</div>
+            </div>
+
+            <!-- Documents Section -->
+            <div id="panel-docs-container" style="display:none;">
+                <label style="font-size:0.75rem; color:#6b7280; font-weight:500; display:block; margin-bottom:8px;">Job Attachments</label>
+                <div id="panel-docs-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+
+            <!-- Action Area -->
+            <div style="border-top:1px solid #f3f4f6; padding-top:20px;">
+                <label style="font-size:0.75rem; color:#6b7280; font-weight:500; display:block; margin-bottom:8px;">Remarks / Notes</label>
+                <textarea id="panel-remark" class="input-field" style="height:80px; resize:none;" placeholder="Enter verification notes or reasons for rejection/resubmission..."></textarea>
+            </div>
+
+            <!-- Logs / History -->
+            <div>
+                <label style="font-size:0.75rem; color:#6b7280; font-weight:500; display:block; margin-bottom:8px;">Verification History</label>
+                <div id="panel-logs" style="display:flex; flex-direction:column; gap:10px; font-size:0.8125rem;"></div>
+            </div>
+        </div>
+
+        <!-- Footer Buttons -->
+        <div style="padding:24px; border-top:1px solid #f3f4f6; display:flex; gap:12px; background:#f9fafb;">
+            <button onclick="submitStatus('resubmit')" class="btn-primary" style="flex:1; background:#d97706; color:#fff;">Request Resubmit</button>
+            <button onclick="submitStatus('rejected')" class="btn-primary" style="flex:1; background:#ef4444; color:#fff;">Reject</button>
+            <button onclick="submitStatus('verified')" class="btn-primary" style="flex:1.5; background:#10b981; color:#fff;">Verify & Approve</button>
+        </div>
+    </div>
+</div>
+
+<div id="loading-overlay" style="position:fixed; inset:0; z-index:50; background:rgba(255,255,255,0.85);
+     display:flex; align-items:center; justify-content:center;">
+    <div class="spinner" style="width:32px; height:32px; color:#8B2A8B;"></div>
+</div>
+
+<div id="toast-container" style="position:fixed; top:24px; right:24px; z-index:60; display:flex; flex-direction:column; gap:12px;"></div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+    Auth.requireRole(['coordinator', 'admin']);
+
+    let activeVerificationId = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const user = Auth.getUser();
+        document.getElementById('sidebar-email').textContent = user?.email || '';
+        document.getElementById('avatar').textContent = (user?.email?.[0] || '?').toUpperCase();
+        document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-IN',
+            { weekday:'long', year:'numeric', month:'short', day:'numeric' });
+
+        await loadVerifications();
+        document.getElementById('loading-overlay').style.display = 'none';
+    });
+
+    async function loadVerifications() {
+        const status = document.getElementById('filter-status').value;
+        const params = { entity_type: 'job' };
+        if (status) params.status = status;
+
+        const res = await Api.get('/verifications', params);
+        const tbody = document.getElementById('job-table-body');
+        tbody.innerHTML = '';
+
+        if (res.status === 'success') {
+            document.getElementById('records-count').textContent = `Found ${res.data.length} records`;
+
+            if (res.data.length > 0) {
+                res.data.forEach(item => {
+                    const tr = document.createElement('tr');
+                    let badgeClass = 'badge-draft';
+                    if (item.status === 'pending') badgeClass = 'badge-pending';
+                    else if (item.status === 'verified') badgeClass = 'badge-verified';
+                    else if (item.status === 'rejected') badgeClass = 'badge-rejected';
+                    else if (item.status === 'resubmit') badgeClass = 'badge-resubmit';
+
+                    tr.innerHTML = `
+                        <td style="font-weight:600; color:#1f2937;">${item.entity_name || 'No Title'}</td>
+                        <td style="color:#4b5563;">${item.entity_subtitle || '-'}</td>
+                        <td style="color:#6b7280;">${item.entity_email || '-'}</td>
+                        <td><span class="badge ${badgeClass}">${item.status.toUpperCase()}</span></td>
+                        <td>
+                            <button onclick="viewDetails('${item.verification_id}')" class="btn-primary" 
+                                    style="width:auto; padding:6px 16px; font-size:0.75rem; background:#8B2A8B;">
+                                Review
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:#6b7280;">No verifications match selected filters.</td></tr>`;
+            }
+        } else {
+            Toast.error('Failed to load verifications.');
+        }
+    }
+
+    async function viewDetails(id) {
+        document.getElementById('loading-overlay').style.display = 'flex';
+        const res = await Api.get(`/verifications/${id}`);
+        document.getElementById('loading-overlay').style.display = 'none';
+
+        if (res.status !== 'success') {
+            Toast.error('Could not fetch verification details.');
+            return;
+        }
+
+        activeVerificationId = id;
+        const details = res.data.entity_details;
+        const verif = res.data.verification;
+
+        document.getElementById('panel-job-title').textContent = details.title || 'No Title';
+        document.getElementById('panel-company').textContent = details.company_name || '-';
+        document.getElementById('panel-job-type').textContent = details.job_type_label || '-';
+
+        // Salary rendering
+        let salStr = '-';
+        if (details.salary_type === 'fixed') salStr = `${details.ctc_lpa} LPA (Fixed)`;
+        else if (details.stipend_pm) salStr = `${details.stipend_pm} / month (Stipend)`;
+        else salStr = details.salary_type || '-';
+        document.getElementById('panel-salary').textContent = salStr;
+
+        document.getElementById('panel-min-cpi').textContent = details.min_cpi || 'No Minimum';
+
+        // Branches/Programs
+        let branches = '-';
+        if (details.allowed_branches_json) {
+            try {
+                const arr = typeof details.allowed_branches_json === 'string' ? JSON.parse(details.allowed_branches_json) : details.allowed_branches_json;
+                branches = arr.join(', ') || '-';
+            } catch(e) {}
+        }
+        document.getElementById('panel-branches').textContent = branches;
+
+        document.getElementById('panel-desc').textContent = details.description || '-';
+        document.getElementById('panel-remark').value = verif.remark || '';
+
+        // Avatar text or company logo
+        if (details.company_logo_url) {
+            document.getElementById('panel-avatar').innerHTML = `<img src="${details.company_logo_url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+        } else {
+            document.getElementById('panel-avatar').textContent = (details.company_name?.[0] || '?').toUpperCase();
+        }
+
+        // Render documents if present
+        const docsContainer = document.getElementById('panel-docs-container');
+        const docsList = document.getElementById('panel-docs-list');
+        docsList.innerHTML = '';
+        if (details.documents_json) {
+            try {
+                const docs = typeof details.documents_json === 'string' ? JSON.parse(details.documents_json) : details.documents_json;
+                if (Array.isArray(docs) && docs.length > 0) {
+                    docsContainer.style.display = 'block';
+                    docs.forEach(doc => {
+                        const link = document.createElement('a');
+                        link.href = doc.url;
+                        link.target = '_blank';
+                        link.style.cssText = 'color:#8B2A8B; font-weight:500; text-decoration:none; font-size:0.8125rem; display:inline-block;';
+                        link.innerHTML = `📄 Open ${doc.name || 'Attachment'}`;
+                        docsList.appendChild(link);
+                    });
+                } else {
+                    docsContainer.style.display = 'none';
+                }
+            } catch(e) {
+                docsContainer.style.display = 'none';
+            }
+        } else {
+            docsContainer.style.display = 'none';
+        }
+
+        // Render audit logs
+        const logsContainer = document.getElementById('panel-logs');
+        logsContainer.innerHTML = '';
+        if (res.data.logs && res.data.logs.length > 0) {
+            res.data.logs.forEach(log => {
+                const logItem = document.createElement('div');
+                logItem.style.cssText = 'border-left:2px solid #e5e7eb; padding-left:12px; margin-bottom:8px;';
+                const formattedDate = new Date(log.changed_at).toLocaleString('en-IN', {
+                    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                });
+                logItem.innerHTML = `
+                    <div style="font-weight:600; color:#374151;">
+                        ${log.from_status ? log.from_status.toUpperCase() : 'INIT'} &rarr; ${log.to_status.toUpperCase()}
+                    </div>
+                    <div style="color:#6b7280; font-size:0.75rem; margin-top:2px;">
+                        By ${log.changed_by_email || 'System'} on ${formattedDate}
+                    </div>
+                `;
+                logsContainer.appendChild(logItem);
+            });
+        } else {
+            logsContainer.innerHTML = '<div style="color:#9ca3af; font-style:italic;">No logs available.</div>';
+        }
+
+        // Show panel
+        const overlay = document.getElementById('panel-overlay');
+        overlay.style.display = 'flex';
+        setTimeout(() => {
+            overlay.querySelector('.side-panel').classList.add('open');
+        }, 50);
+    }
+
+    function hidePanel() {
+        const overlay = document.getElementById('panel-overlay');
+        overlay.querySelector('.side-panel').classList.remove('open');
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 300);
+    }
+
+    function closePanel(e) {
+        if (e.target === document.getElementById('panel-overlay')) {
+            hidePanel();
+        }
+    }
+
+    async function submitStatus(status) {
+        if (!activeVerificationId) return;
+
+        const remark = document.getElementById('panel-remark').value;
+        document.getElementById('loading-overlay').style.display = 'flex';
+
+        const res = await Api.put(`/verifications/${activeVerificationId}`, {
+            status: status,
+            remark: remark
+        });
+
+        document.getElementById('loading-overlay').style.display = 'none';
+
+        if (res.status === 'success') {
+            Toast.success(`Verification status updated to ${status}.`);
+            hidePanel();
+            await loadVerifications();
+        } else {
+            Toast.error(res.message || 'Failed to update status.');
+        }
+    }
+</script>
+</body>
+</html>

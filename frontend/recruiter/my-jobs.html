@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Postings — TNP Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <style>
+        /* Layout */
+        #app-layout { display: flex; min-height: 100vh; }
+        #sidebar     { width: 256px; flex-shrink: 0; }
+        #main-area   { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .fade-in { animation: fadeIn 0.4s ease-out both; }
+
+        .nav-link { display:flex; align-items:center; gap:12px; padding:10px 16px; border-radius:12px;
+                    color:#4b5563; font-weight:500; font-size:0.875rem; text-decoration:none;
+                    transition:all 0.2s; }
+        .nav-link:hover { background:#fdf2f8; color:#8B2A8B; }
+        .nav-link.active { background:#fdf2f8; color:#8B2A8B; font-weight:600; }
+        
+        .job-card { background: #fff; border: 1px solid #f3f4f6; border-radius: 16px; padding: 20px;
+                    margin-bottom: 16px; display: flex; flex-direction: column; gap: 12px;
+                    transition: box-shadow 0.2s; }
+        .job-card:hover { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .badge { padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
+    </style>
+</head>
+<body style="background:#f9fafb; font-family:Inter,system-ui,sans-serif;">
+
+<div id="app-layout">
+    <!-- Sidebar -->
+    <aside id="sidebar" style="background:#fff; border-right:1px solid #f3f4f6; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto;">
+        <div style="padding:24px; border-bottom:1px solid #f3f4f6;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <img src="../assets/img/iiitm-logo.png" alt="IIIT Manipur" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                <div>
+                    <div style="font-size:0.875rem; font-weight:700; color:#1f2937;">TNP Portal</div>
+                    <div style="font-size:0.75rem; color:#6b7280;">Recruiter Dashboard</div>
+                </div>
+            </div>
+        </div>
+        <nav style="flex:1; padding:16px; display:flex; flex-direction:column; gap:4px;">
+            <a href="profile.html"    class="nav-link">🏢 <span>Company Profile</span></a>
+            <a href="post-job.html"   class="nav-link">📝 <span>Post a Job</span></a>
+            <a href="my-jobs.html"    class="nav-link active">📊 <span>My Postings</span></a>
+        </nav>
+        <div style="padding:16px; border-top:1px solid #f3f4f6;">
+            <button onclick="Auth.logout()" style="width:100%; display:flex; align-items:center; gap:10px; padding:10px 16px; border-radius:12px; background:none; border:none; cursor:pointer; color:#ef4444; font-size:0.875rem; font-weight:500; transition:background 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
+                🚪 <span>Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <div id="main-area">
+        <header style="background:#fff; border-bottom:1px solid #f3f4f6; padding:16px 32px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10;">
+            <h1 style="font-size:1.25rem; font-weight:600; color:#1f2937; margin:0;">My Postings</h1>
+            <a href="post-job.html" class="btn-primary" style="width:auto; padding:8px 16px; font-size:0.875rem; text-decoration:none;">+ Post New Job</a>
+        </header>
+
+        <main style="padding:32px; max-width:900px; margin:0 auto; width:100%;">
+            <div id="jobs-container"></div>
+            
+            <div id="empty-state" style="display:none; text-align:center; padding:60px 20px; background:#fff; border-radius:16px; border:1px dashed #d1d5db;">
+                <div style="font-size:3rem; margin-bottom:16px;">📋</div>
+                <h3 style="font-size:1.125rem; font-weight:600; color:#1f2937; margin:0 0 8px;">No Jobs Posted Yet</h3>
+                <p style="color:#6b7280; font-size:0.875rem; margin:0 0 24px;">You haven't posted any jobs. Create a draft to get started.</p>
+                <a href="post-job.html" class="btn-primary" style="width:auto; padding:10px 24px; text-decoration:none; display:inline-block;">Post a Job</a>
+            </div>
+            
+            <div id="pagination" style="display:none; justify-content:center; gap:8px; margin-top:24px;">
+                <button id="prev-btn" onclick="changePage(-1)" class="btn-secondary" style="width:auto; padding:6px 16px; font-size:0.875rem;">← Prev</button>
+                <span id="page-info" style="padding:6px 12px; font-size:0.875rem; color:#4b5563;"></span>
+                <button id="next-btn" onclick="changePage(1)" class="btn-secondary" style="width:auto; padding:6px 16px; font-size:0.875rem;">Next →</button>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" style="position:fixed; inset:0; z-index:50; background:rgba(255,255,255,0.85); display:flex; align-items:center; justify-content:center;">
+    <div class="spinner" style="width:32px; height:32px; color:#8B2A8B;"></div>
+</div>
+<!-- Toast container -->
+<div id="toast-container" style="position:fixed; top:24px; right:24px; z-index:60; display:flex; flex-direction:column; gap:12px;"></div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/components.js"></script>
+<script>
+    Auth.requireRole(['recruiter']);
+    
+    let currentPage = 1;
+    let totalPages = 1;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadJobs(1);
+    });
+
+    async function loadJobs(page) {
+        document.getElementById('loading-overlay').style.display = 'flex';
+        const res = await Api.get('/recruiters/me/jobs', { page, per_page: 10 });
+        document.getElementById('loading-overlay').style.display = 'none';
+
+        if (res.status !== 'success') { Toast.error('Failed to load jobs'); return; }
+        
+        currentPage = res.meta.page;
+        totalPages = res.meta.total_pages || 1;
+        
+        renderJobs(res.data);
+        renderPagination();
+    }
+
+    function renderJobs(jobs) {
+        const container = document.getElementById('jobs-container');
+        const emptyState = document.getElementById('empty-state');
+        
+        if (jobs.length === 0) {
+            container.innerHTML = '';
+            emptyState.style.display = 'block';
+            return;
+        }
+        
+        emptyState.style.display = 'none';
+        
+        const statusColors = {
+            draft:     'background:#f3f4f6; color:#4b5563',
+            pending:   'background:#fef3c7; color:#92400e',
+            verified:  'background:#dbeafe; color:#1e40af',
+            opened:    'background:#d1fae5; color:#065f46',
+            closed:    'background:#fee2e2; color:#b91c1c',
+            cancelled: 'background:#f3f4f6; color:#6b7280'
+        };
+
+        container.innerHTML = jobs.map((job, i) => `
+            <div class="job-card fade-in" style="animation-delay:${i * 0.05}s">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div>
+                        <h3 style="font-size:1.125rem; font-weight:600; color:#1f2937; margin:0 0 4px;">${job.title}</h3>
+                        <div style="font-size:0.875rem; color:#6b7280; display:flex; gap:12px;">
+                            <span>${job.job_type_label || 'Job'}</span>
+                            <span>•</span>
+                            <span style="color:#059669; font-weight:500;">
+                                ${job.ctc_lpa ? `₹${job.ctc_lpa} LPA` : (job.stipend_pm ? `₹${job.stipend_pm}/mo` : 'Not specified')}
+                            </span>
+                        </div>
+                    </div>
+                    <span class="badge" style="${statusColors[job.job_status] || statusColors.draft}">
+                        ${job.job_status.toUpperCase()}
+                    </span>
+                </div>
+                
+                <div style="display:flex; gap:16px; font-size:0.8125rem; color:#4b5563; background:#f9fafb; padding:12px; border-radius:12px; align-items:center;">
+                    <div style="flex:1;"><strong>Session:</strong> ${job.session_label}</div>
+                    <div style="flex:1;"><strong>Created:</strong> ${new Date(job.created_at).toLocaleDateString()}</div>
+                    <div style="flex:1;"><strong>Applications:</strong> ${job.applications_count || 0}</div>
+                </div>
+                
+                <div style="display:flex; gap:8px; margin-top:4px;">
+                    ${job.job_status === 'draft' ? `
+                        <button onclick="submitJob('${job.job_id}')" class="btn-primary" style="width:auto; padding:6px 16px; font-size:0.8125rem;">Submit for Review</button>
+                        <a href="post-job.html?id=${job.job_id}" class="btn-secondary" style="width:auto; padding:6px 16px; font-size:0.8125rem; text-decoration:none;">Edit Draft</a>
+                    ` : `
+                        <a href="job-applications.html?id=${job.job_id}" class="btn-primary" style="width:auto; padding:6px 16px; font-size:0.8125rem; text-decoration:none;">View Applications (${job.applications_count || 0})</a>
+                    `}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderPagination() {
+        const pag = document.getElementById('pagination');
+        if (totalPages > 1) {
+            pag.style.display = 'flex';
+            document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('prev-btn').disabled = currentPage === 1;
+            document.getElementById('next-btn').disabled = currentPage === totalPages;
+        } else {
+            pag.style.display = 'none';
+        }
+    }
+
+    function changePage(delta) {
+        const newPage = currentPage + delta;
+        if (newPage >= 1 && newPage <= totalPages) loadJobs(newPage);
+    }
+    
+    async function submitJob(jobId) {
+        if (!confirm('Are you sure you want to submit this job for review? You will not be able to edit it once submitted.')) return;
+        
+        document.getElementById('loading-overlay').style.display = 'flex';
+        const res = await Api.put(`/recruiters/me/jobs/${jobId}/submit`);
+        
+        if (res.status === 'success') {
+            Toast.success('Job submitted successfully!');
+            await loadJobs(currentPage);
+        } else {
+            document.getElementById('loading-overlay').style.display = 'none';
+            Toast.error(res.message || 'Failed to submit job.');
+        }
+    }
+</script>
+</body>
+</html>
