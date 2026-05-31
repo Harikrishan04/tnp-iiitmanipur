@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Notices — IIIT Manipur</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; font-family: 'Inter', sans-serif; background: #f9fafb; color: #111827; }
+        header { background: #fff; padding: 20px; text-align: center; border-bottom: 1px solid #f3f4f6; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-left: 4px solid #8b2a8b; }
+        .card.urgent { border-left-color: #ef4444; background: #fef2f2; }
+        .card.important { border-left-color: #f59e0b; background: #fffbeb; }
+        .title { font-size: 1.125rem; font-weight: 700; margin: 0 0 8px; }
+        .date { font-size: 0.75rem; color: #6b7280; margin-bottom: 16px; }
+        .body { font-size: 0.875rem; color: #4b5563; line-height: 1.6; white-space: pre-wrap; }
+        .attachments { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .attachment-btn { font-size: 0.75rem; background: #f3f4f6; color: #4b5563; padding: 6px 12px; border-radius: 6px; text-decoration: none; border: 1px solid #e5e7eb; }
+        .spinner { width: 32px; height: 32px; border: 3px solid #f3f4f6; border-top: 3px solid #8b2a8b; border-radius: 50%; animation: spin 1s linear infinite; margin: 40px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1 style="margin:0; font-size:1.5rem; color:#8b2a8b;">Training & Placement Notices</h1>
+    <p style="margin:4px 0 0; font-size:0.875rem; color:#6b7280;">IIIT Manipur</p>
+</header>
+
+<div class="container" id="notices-container">
+    <div class="spinner"></div>
+</div>
+
+<script src="assets/js/config.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const container = document.getElementById('notices-container');
+        try {
+            const res = await fetch(`${APP_CONFIG.API_BASE}/public/announcements`).then(r => r.json());
+            container.innerHTML = '';
+            
+            if (res.status === 'success') {
+                if (res.data.length === 0) {
+                    container.innerHTML = '<div style="text-align:center; color:#6b7280; padding:40px;">No active notices at this time.</div>';
+                    return;
+                }
+
+                res.data.forEach(ann => {
+                    const card = document.createElement('div');
+                    card.className = `card ${ann.priority}`;
+                    
+                    let attachHtml = '';
+                    if (ann.attachments && ann.attachments.length > 0) {
+                        attachHtml = '<div class="attachments">' + 
+                            ann.attachments.map(att => `<a href="${APP_CONFIG.FRONTEND_BASE.replace('/frontend','')}${att.path}" target="_blank" class="attachment-btn">📎 ${att.name}</a>`).join('') +
+                            '</div>';
+                    }
+
+                    card.innerHTML = `
+                        <h2 class="title">${ann.title}</h2>
+                        <div class="date">${new Date(ann.publish_at).toLocaleString('en-IN')}</div>
+                        <div class="body">${ann.body}</div>
+                        ${attachHtml}
+                    `;
+                    container.appendChild(card);
+                });
+            } else {
+                container.innerHTML = '<div style="text-align:center; color:#ef4444; padding:40px;">Failed to load notices.</div>';
+            }
+        } catch (e) {
+            container.innerHTML = '<div style="text-align:center; color:#ef4444; padding:40px;">Network error.</div>';
+        }
+    });
+</script>
+</body>
+</html>

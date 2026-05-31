@@ -1,0 +1,8 @@
+# Protect uploaded documents from being directly browsed
+# Only allow access to specific file types (not directory listing)
+Options -Indexes
+
+# Allow access to uploaded files but prevent PHP execution
+<FilesMatch "\.ph(p[3457]?|t|tml)$">
+    Require all denied
+</FilesMatch>

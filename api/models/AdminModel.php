@@ -57,12 +57,46 @@ class AdminModel
     public function getAnnouncements(): array
     {
         $stmt = $this->db->query(
-            "SELECT a.*, u.email AS posted_by_email 
+            "SELECT a.*, u.email AS posted_by_email,
+             (SELECT COUNT(*) FROM announcement_reads r WHERE r.announcement_id = a.announcement_id) AS read_count
              FROM announcements a
              JOIN users u ON u.user_id = a.posted_by
              ORDER BY a.created_at DESC"
         );
         return $stmt->fetchAll();
+    }
+
+    public function getPublicAnnouncements(): array
+    {
+        $stmt = $this->db->query(
+            "SELECT a.announcement_id, a.title, a.body, a.priority, a.publish_at, a.attachments_json
+             FROM announcements a
+             WHERE a.status = 'published' AND a.publish_at <= NOW()
+             ORDER BY a.created_at DESC"
+        );
+        return $stmt->fetchAll();
+    }
+
+    public function getAnnouncementsForUser(string $userId, string $role): array
+    {
+        $sql = "SELECT a.*, 
+                 IF(r.read_id IS NOT NULL, 1, 0) AS is_read
+                 FROM announcements a
+                 LEFT JOIN announcement_reads r ON r.announcement_id = a.announcement_id AND r.user_id = ?
+                 WHERE a.status = 'published' AND a.publish_at <= NOW()
+                   AND JSON_CONTAINS(a.visible_to_roles_json, ?)
+                 ORDER BY a.created_at DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$userId, json_encode($role)]);
+        return $stmt->fetchAll();
+    }
+
+    public function markAnnouncementAsRead(string $userId, string $annId): bool
+    {
+        $stmt = $this->db->prepare(
+            "INSERT IGNORE INTO announcement_reads (announcement_id, user_id) VALUES (?, ?)"
+        );
+        return $stmt->execute([$annId, $userId]);
     }
 
     public function createAnnouncement(
@@ -75,18 +109,19 @@ class AdminModel
         string $visibleToRolesJson,
         ?string $publishAt,
         ?string $expiresAt,
-        string $status
+        string $status,
+        ?string $attachmentsJson = null
     ): string {
         $id = $this->db->query("SELECT UUID()")->fetchColumn();
         $pub = $publishAt ?: date('Y-m-d H:i:s');
         $pri = $priority ?: 'normal';
 
         $stmt = $this->db->prepare(
-            "INSERT INTO announcements (announcement_id, posted_by, posted_by_role, title, body, priority, job_id, visible_to_roles_json, publish_at, expires_at, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO announcements (announcement_id, posted_by, posted_by_role, title, body, priority, job_id, visible_to_roles_json, publish_at, expires_at, status, attachments_json)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
         $stmt->execute([
-            $id, $postedBy, $postedByRole, $title, $body, $pri, $jobId, $visibleToRolesJson, $pub, $expiresAt, $status
+            $id, $postedBy, $postedByRole, $title, $body, $pri, $jobId, $visibleToRolesJson, $pub, $expiresAt, $status, $attachmentsJson
         ]);
         return $id;
     }

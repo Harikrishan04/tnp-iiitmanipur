@@ -76,6 +76,48 @@ class StudentService
             return ['success' => false, 'message' => 'Validation failed.', 'errors' => $errors];
         }
 
+        // Profile Locking Logic
+        $stmtVerif = $this->db->prepare("SELECT status FROM verifications WHERE entity_id = ? AND entity_type = 'student'");
+        $stmtVerif->execute([$studentId]);
+        $verifStatus = $stmtVerif->fetchColumn();
+
+        if ($verifStatus === 'verified' || $verifStatus === 'under_review') {
+            $restrictedFields = [
+                'name', 'roll_no', 'dept_id', 'program_id', 'cpi', 'current_semester', 'date_of_birth',
+                'gender', 'category', 'is_pwd', 'is_ews', 'education_details_json'
+            ];
+            foreach ($restrictedFields as $rf) {
+                if (array_key_exists($rf, $data)) {
+                    return [
+                        'success' => false, 
+                        'message' => "Profile is {$verifStatus}. You cannot modify core academic or identity fields. Please contact the TNP cell."
+                    ];
+                }
+            }
+
+            // Secure Document Handling: Allow resume updates, block everything else
+            if (array_key_exists('documents_json', $data)) {
+                $profile = $this->studentModel->findById($studentId);
+                $oldDocs = json_decode($profile['documents_json'] ?? '{}', true) ?: [];
+                $newDocs = is_string($data['documents_json']) ? json_decode($data['documents_json'], true) : $data['documents_json'];
+                $newDocs = $newDocs ?: [];
+
+                // We temporarily remove the 'resume' key from both arrays to see if any other core documents changed
+                $oldCoreDocs = $oldDocs;
+                $newCoreDocs = $newDocs;
+                unset($oldCoreDocs['resume']);
+                unset($newCoreDocs['resume']);
+
+                // If any core document (10th marksheet, category cert, etc) is added/changed/deleted, block it.
+                if ($oldCoreDocs !== $newCoreDocs) {
+                    return [
+                        'success' => false, 
+                        'message' => "Profile is {$verifStatus}. You can only update your Resume. Modifying core verification documents is blocked."
+                    ];
+                }
+            }
+        }
+
         $updated = $this->studentModel->updateProfile($studentId, $data);
 
         // Fetch the updated profile to check completion

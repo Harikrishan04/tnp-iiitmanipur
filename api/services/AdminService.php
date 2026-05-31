@@ -85,8 +85,10 @@ class AdminService
         
         // Fetch targets for each announcement
         foreach ($announcements as &$ann) {
-            $ann['visible_to_roles'] = json_decode($ann['visible_to_roles_json'], true) ?: [];
+            $ann['visible_to_roles'] = json_decode($ann['visible_to_roles_json'] ?? '[]', true) ?: [];
+            $ann['attachments'] = json_decode($ann['attachments_json'] ?? '[]', true) ?: [];
             $ann['targets'] = $this->adminModel->getAnnouncementTargets($ann['announcement_id']);
+            unset($ann['attachments_json']);
         }
 
         return ['success' => true, 'data' => $announcements];
@@ -103,19 +105,22 @@ class AdminService
         array $targets,
         ?string $publishAt,
         ?string $expiresAt,
-        string $status
+        string $status,
+        ?array $attachments,
+        bool $sendEmail
     ): array {
         if (empty($title) || empty($body)) {
             return ['success' => false, 'message' => 'Title and body are required fields.'];
         }
 
         $visibleToRolesJson = json_encode($visibleToRoles);
+        $attachmentsJson = !empty($attachments) ? json_encode($attachments) : null;
 
         try {
             $this->db->beginTransaction();
 
             $annId = $this->adminModel->createAnnouncement(
-                $postedBy, $postedByRole, $title, $body, $priority, $jobId, $visibleToRolesJson, $publishAt, $expiresAt, $status
+                $postedBy, $postedByRole, $title, $body, $priority, $jobId, $visibleToRolesJson, $publishAt, $expiresAt, $status, $attachmentsJson
             );
 
             // Add targets
@@ -128,12 +133,90 @@ class AdminService
             $this->db->commit();
             Logger::info('admin', "Announcement created", ['announcement_id' => $annId, 'title' => $title]);
 
+            // Email Notifications
+            if ($sendEmail && in_array($priority, ['important', 'urgent'])) {
+                // Determine recipients based on roles (Simplified: sending to all active users in those roles)
+                // Real implementation would filter by branch/year targets.
+                // Note: We use our BackgroundJob to actually send emails so it doesn't block.
+                $stmt = $this->db->prepare("
+                    SELECT email FROM users u 
+                    JOIN roles r ON r.role_id = u.role_id
+                    WHERE JSON_CONTAINS(?, JSON_QUOTE(r.name)) AND u.is_active = 1
+                ");
+                $stmt->execute([$visibleToRolesJson]);
+                $emails = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+
+                if (!empty($emails)) {
+                    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+                    
+                    try {
+                        $mail->isSMTP();
+                        $mail->Host       = $_ENV['SMTP_HOST'] ?? 'smtp.gmail.com';
+                        $mail->SMTPAuth   = true;
+                        $mail->Username   = $_ENV['SMTP_USERNAME'] ?? '';
+                        $mail->Password   = $_ENV['SMTP_PASSWORD'] ?? '';
+                        $mail->SMTPSecure = 'tls';
+                        $mail->Port       = (int) ($_ENV['SMTP_PORT'] ?? 587);
+
+                        $mail->setFrom(
+                            $_ENV['SMTP_FROM_EMAIL'] ?? 'noreply@iiitmanipur.ac.in',
+                            $_ENV['SMTP_FROM_NAME'] ?? 'TNP Cell'
+                        );
+                        $mail->isHTML(true);
+                        $mail->Subject = 'TNP Announcement: ' . $title;
+                        $mail->Body    = "
+                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;'>
+                                <h2 style='color: #8B2A8B; margin-bottom: 16px; border-bottom: 2px solid #8b2a8b; padding-bottom: 8px;'>TNP Announcement</h2>
+                                <h3 style='margin: 0 0 16px;'>{$title}</h3>
+                                <p style='color: #4b5563; line-height: 1.6; white-space: pre-wrap;'>" . htmlspecialchars($body) . "</p>
+                                <p style='margin-top: 24px; font-size: 0.875rem; color: #9ca3af;'>Log in to the TNP Portal for more details or to view any attached documents.</p>
+                            </div>
+                        ";
+
+                        foreach ($emails as $email) {
+                            $mail->addAddress($email);
+                            $mail->send();
+                            $mail->clearAddresses(); // clear for next iteration
+                        }
+                    } catch (\Exception $e) {
+                        Logger::error('admin', 'Failed to send announcement emails', ['error' => $e->getMessage()]);
+                    }
+                }
+            }
+
             return ['success' => true, 'message' => 'Announcement posted successfully.', 'data' => ['announcement_id' => $annId]];
         } catch (\PDOException $e) {
             $this->db->rollBack();
             Logger::error('admin', "Failed creating announcement", ['error' => $e->getMessage()]);
             return ['success' => false, 'message' => 'Failed to create announcement.'];
         }
+    }
+
+    public function listPublicAnnouncements(): array
+    {
+        $announcements = $this->adminModel->getPublicAnnouncements();
+        foreach ($announcements as &$ann) {
+            $ann['attachments'] = json_decode($ann['attachments_json'] ?? '[]', true) ?: [];
+            unset($ann['attachments_json']);
+        }
+        return ['success' => true, 'data' => $announcements];
+    }
+
+    public function listAnnouncementsForUser(string $userId, string $role): array
+    {
+        $announcements = $this->adminModel->getAnnouncementsForUser($userId, $role);
+        foreach ($announcements as &$ann) {
+            $ann['attachments'] = json_decode($ann['attachments_json'] ?? '[]', true) ?: [];
+            $ann['is_read'] = (bool) ($ann['is_read'] ?? false);
+            unset($ann['attachments_json']);
+        }
+        return ['success' => true, 'data' => $announcements];
+    }
+
+    public function markAnnouncementAsRead(string $userId, string $annId): array
+    {
+        $this->adminModel->markAnnouncementAsRead($userId, $annId);
+        return ['success' => true, 'message' => 'Marked as read'];
     }
 
     public function deleteAnnouncement(string $id): array

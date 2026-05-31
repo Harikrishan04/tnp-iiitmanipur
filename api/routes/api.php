@@ -19,6 +19,7 @@ use App\Controllers\ApplicationController;
 use App\Controllers\RecruiterController;
 use App\Controllers\CoordinatorController;
 use App\Controllers\AdminController;
+use App\Controllers\DocumentController;
 
 // ─── Auth (no auth required) ─────────────────────────────────────────────────
 $router->group('/auth', function ($router) {
@@ -82,11 +83,31 @@ $router->group('/admin', function ($router) {
     $router->get('/sessions',              [AdminController::class, 'listSessions'],      ['auth', 'role:admin']);
     $router->post('/sessions',             [AdminController::class, 'createSession'],     ['auth', 'role:admin']);
     $router->put('/sessions/{id}/activate',[AdminController::class, 'activateSession'],   ['auth', 'role:admin']);
-    $router->get('/announcements',         [AdminController::class, 'listAnnouncements'], ['auth', 'role:admin']);
-    $router->post('/announcements',        [AdminController::class, 'createAnnouncement'],['auth', 'role:admin']);
-    $router->delete('/announcements/{id}',  [AdminController::class, 'deleteAnnouncement'],['auth', 'role:admin']);
+    $router->get('/announcements',         [AdminController::class, 'listAnnouncements'], ['auth', 'role:admin,coordinator']);
+    $router->post('/announcements',        [AdminController::class, 'createAnnouncement'],['auth', 'role:admin,coordinator']);
+    $router->delete('/announcements/{id}',  [AdminController::class, 'deleteAnnouncement'],['auth', 'role:admin,coordinator']);
     $router->get('/stats',                 [AdminController::class, 'getStats'],          ['auth', 'role:admin']);
     $router->get('/users',                 [AdminController::class, 'listUsers'],          ['auth', 'role:admin']);
     $router->post('/users/coordinator',    [AdminController::class, 'createCoordinator'],  ['auth', 'role:admin']);
     $router->put('/users/{id}/status',     [AdminController::class, 'updateUserStatus'],  ['auth', 'role:admin']);
+});
+
+// ─── Documents (Upload / Manage) ─────────────────────────────────────────────
+$router->group('/documents', function ($router) {
+    $router->post('/upload',             [DocumentController::class, 'upload'],           ['auth', 'role:student']);
+    $router->post('/upload-attachment',  [DocumentController::class, 'uploadAttachment'], ['auth', 'role:admin,coordinator']);
+    $router->delete('/{doc_type}',       [DocumentController::class, 'delete'],           ['auth', 'role:student']);
+    $router->post('/url',                [DocumentController::class, 'saveUrl'],          ['auth', 'role:student']);
+    $router->get('/types',               [DocumentController::class, 'types'],            ['auth']);
+    $router->get('/usage',               [DocumentController::class, 'usage'],            ['auth', 'role:student']);
+});
+
+// ─── Public / User Facing Announcements ──────────────────────────────────────
+$router->group('/public/announcements', function ($router) {
+    $router->get('', [App\Controllers\AnnouncementController::class, 'listPublic']);
+});
+
+$router->group('/user/announcements', function ($router) {
+    $router->get('',            [App\Controllers\AnnouncementController::class, 'listForUser'], ['auth']);
+    $router->post('/{id}/read', [App\Controllers\AnnouncementController::class, 'markAsRead'],  ['auth']);
 });

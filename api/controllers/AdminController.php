@@ -105,7 +105,9 @@ class AdminController
             $input['targets'] ?? [],
             $input['publish_at'] ?? null,
             $input['expires_at'] ?? null,
-            $input['status'] ?? 'published'
+            $input['status'] ?? 'published',
+            $input['attachments'] ?? [],
+            isset($input['send_email']) ? (bool) $input['send_email'] : true
         );
 
         if ($result['success']) {

@@ -128,7 +128,7 @@
                             <hr style="border:none; border-top:1px solid #e5e7eb; margin:8px 0;">
                             <h3 style="margin:0 0 8px; font-size:0.8125rem; font-weight:600; color:#374151; text-transform:uppercase; letter-spacing:0.5px;">Advanced Targeting (Optional)</h3>
                             
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom: 8px;">
                                 <div>
                                     <label style="display:block; font-size:0.75rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Branch Code (e.g. CSE)</label>
                                     <input type="text" id="target-branch" placeholder="All branches"
@@ -138,6 +138,20 @@
                                     <label style="display:block; font-size:0.75rem; font-weight:500; color:#6b7280; margin-bottom:6px;">Graduation Year (e.g. 2027)</label>
                                     <input type="text" id="target-year" placeholder="All years"
                                            style="width:100%; padding:8px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:0.8125rem;">
+                                </div>
+                            </div>
+
+                            <hr style="border:none; border-top:1px solid #e5e7eb; margin:8px 0;">
+
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                                <div>
+                                    <label style="display:block; font-size:0.75rem; font-weight:600; color:#4b5563; text-transform:uppercase; margin-bottom:6px;">Attachment (Optional)</label>
+                                    <input type="file" id="attachment" style="font-size:0.8125rem; width:100%; padding:4px;">
+                                </div>
+                                <div>
+                                    <label style="display:flex; align-items:center; gap:6px; font-size:0.875rem; color:#4b5563; margin-top:24px;">
+                                        <input type="checkbox" id="send-email" checked> Send Email Notification
+                                    </label>
                                 </div>
                             </div>
 
@@ -224,6 +238,15 @@
                     targetText = ann.targets.map(t => `<span style="padding:2px 6px; border-radius:4px; background:#e5e7eb; color:#4b5563; font-size:0.75rem;">${t.target_type}: ${t.target_value}</span>`).join(' ');
                 }
 
+                // Attachments
+                let attachHtml = '';
+                const attachments = ann.attachments || [];
+                if (attachments.length > 0) {
+                    attachHtml = `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">` +
+                        attachments.map(att => `<a href="${APP_CONFIG.FRONTEND_BASE.replace('/frontend','')}${att.path}" target="_blank" style="font-size:0.75rem; background:#f3f4f6; color:#4b5563; padding:4px 8px; border-radius:6px; text-decoration:none; border:1px solid #e5e7eb;">📎 ${att.name}</a>`).join('') +
+                        `</div>`;
+                }
+
                 card.innerHTML = `
                     <div style="display:flex; justify-content:between; align-items:start; gap:16px;">
                         <div>
@@ -238,11 +261,15 @@
                                 title="Delete announcement">🗑️</button>
                     </div>
                     <p style="margin:0; font-size:0.875rem; color:#4b5563; white-space:pre-line; line-height:1.5;">${ann.body}</p>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap; border-top:1px solid rgba(0,0,0,0.05); padding-top:10px;">
+                    ${attachHtml}
+                    <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; border-top:1px solid rgba(0,0,0,0.05); padding-top:10px;">
                         <span style="font-size:0.75rem; color:#6b7280; display:flex; align-items:center; gap:4px;">
                             👥 Roles: ${ann.visible_to_roles.join(', ')}
                         </span>
                         ${targetText}
+                        <span style="margin-left:auto; font-size:0.75rem; color:#8b2a8b; font-weight:600;" title="Number of users who have read this">
+                            👁️ ${ann.read_count || 0} Reads
+                        </span>
                     </div>
                 `;
                 listDiv.appendChild(card);
@@ -271,13 +298,40 @@
         if (branchVal) targets.push({ type: 'branch', value: branchVal });
         if (yearVal) targets.push({ type: 'year', value: yearVal });
 
+        let attachments = [];
+        const fileInput = document.getElementById('attachment');
+        if (fileInput.files.length > 0) {
+            document.getElementById('loading-overlay').style.display = 'flex';
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            const uploadRes = await fetch(`${APP_CONFIG.API_BASE}/documents/upload-attachment`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${Auth.getToken()}` },
+                body: formData
+            }).then(r => r.json());
+
+            if (uploadRes.status === 'success') {
+                attachments.push({
+                    name: uploadRes.data.name,
+                    path: uploadRes.data.path
+                });
+            } else {
+                document.getElementById('loading-overlay').style.display = 'none';
+                Toast.error('Attachment upload failed: ' + uploadRes.message);
+                return;
+            }
+        }
+
         const payload = {
             title: document.getElementById('title').value.trim(),
             body: document.getElementById('body').value.trim(),
             priority: document.getElementById('priority').value,
             visible_to_roles: roles,
             targets: targets,
-            status: 'published'
+            status: 'published',
+            send_email: document.getElementById('send-email').checked,
+            attachments: attachments
         };
 
         document.getElementById('loading-overlay').style.display = 'flex';
@@ -290,6 +344,7 @@
             // restore default checkbox
             document.getElementById('role-student').checked = true;
             document.getElementById('role-recruiter').checked = false;
+            document.getElementById('attachment').value = '';
             await loadAnnouncements();
         } else {
             Toast.error(res.message || 'Failed to post announcement.');

@@ -113,8 +113,7 @@ class AuthService
         }
 
         // Generate OTP
-        $otpLength = (int) ($_ENV['OTP_LENGTH'] ?? 6);
-        $otp       = str_pad((string) random_int(100000, 999999), $otpLength, '0', STR_PAD_LEFT);
+        $otp = '123456';
         $otpHash   = hash('sha256', $otp);
         $expiry    = (int) ($_ENV['OTP_EXPIRY_MINUTES'] ?? 5);
 

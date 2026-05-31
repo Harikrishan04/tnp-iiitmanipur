@@ -102,6 +102,14 @@
                 <span id="completion-pct" style="font-weight:700; color:#b45309; font-size:1.125rem;">0%</span>
             </div>
 
+            <!-- ─── Notices (Announcements) ─── -->
+            <div class="card fade-in" style="margin-bottom:20px; border-left:4px solid #8b2a8b;">
+                <h2 style="font-size:1rem; font-weight:600; color:#1f2937; margin:0 0 16px;">TNP Notices</h2>
+                <div id="student-notices" style="display:flex; flex-direction:column; gap:12px; max-height:300px; overflow-y:auto; padding-right:8px;">
+                    <div style="font-size:0.8125rem; color:#6b7280; text-align:center;">Loading notices...</div>
+                </div>
+            </div>
+
             <!-- ─── Personal Info ─── -->
             <div class="card fade-in" style="margin-bottom:20px;">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
@@ -330,6 +338,23 @@
                 </div>
             </div>
 
+            <!-- ─── Documents Upload ─── -->
+            <div class="card fade-in" style="margin-bottom:20px; animation-delay:0.52s;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                    <h2 style="font-size:1rem; font-weight:600; color:#1f2937; margin:0;">Documents</h2>
+                    <div id="storage-usage" style="font-size:0.75rem; color:#6b7280;"></div>
+                </div>
+
+                <!-- Storage Bar -->
+                <div style="background:#f3f4f6; border-radius:8px; height:6px; margin-bottom:20px; overflow:hidden;">
+                    <div id="storage-bar" style="height:100%; background:linear-gradient(90deg,#8B2A8B,#a855f7); border-radius:8px; width:0%; transition:width 0.5s ease;"></div>
+                </div>
+
+                <div id="doc-upload-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+                    <!-- JS will populate document cards here -->
+                </div>
+            </div>
+
             <!-- ─── Placement Status ─── -->
             <div class="card fade-in" style="animation-delay:0.55s;">
                 <h2 style="font-size:1rem; font-weight:600; color:#1f2937; margin:0 0 16px;">Placement Status</h2>
@@ -370,9 +395,67 @@
         document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-IN',
             { weekday:'long', year:'numeric', month:'short', day:'numeric' });
 
-        await Promise.all([loadProfile(), loadLookups()]);
+        await Promise.all([loadProfile(), loadLookups(), loadNotices()]);
         document.getElementById('loading-overlay').style.display = 'none';
     });
+
+    async function loadNotices() {
+        try {
+            const res = await Api.get('/user/announcements');
+            const container = document.getElementById('student-notices');
+            container.innerHTML = '';
+            
+            if (res.status === 'success') {
+                if (res.data.length === 0) {
+                    container.innerHTML = '<div style="font-size:0.8125rem; color:#6b7280; text-align:center; padding:16px;">No new notices.</div>';
+                    return;
+                }
+
+                res.data.forEach(ann => {
+                    const el = document.createElement('div');
+                    el.style.cssText = `background:#f9fafb; padding:16px; border-radius:12px; border:1px solid ${ann.is_read ? '#f3f4f6' : '#e5e7eb'}; cursor:pointer; transition:all 0.2s;`;
+                    if (!ann.is_read) {
+                        el.style.borderLeft = '3px solid #8b2a8b';
+                        el.style.background = '#fff';
+                    }
+
+                    let attachHtml = '';
+                    if (ann.attachments && ann.attachments.length > 0) {
+                        attachHtml = '<div style="margin-top:8px; display:flex; gap:8px;">' + 
+                            ann.attachments.map(att => `<a href="${APP_CONFIG.FRONTEND_BASE.replace('/frontend','')}${att.path}" target="_blank" onclick="event.stopPropagation()" style="font-size:0.75rem; background:#f3f4f6; color:#4b5563; padding:4px 8px; border-radius:6px; text-decoration:none;">📎 ${att.name}</a>`).join('') +
+                            '</div>';
+                    }
+
+                    el.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:4px;">
+                            <h3 style="margin:0; font-size:0.875rem; font-weight:600; color:#111827;">
+                                ${!ann.is_read ? '<span style="color:#ef4444; font-size:0.75rem; margin-right:4px;">●</span>' : ''}
+                                ${ann.title}
+                            </h3>
+                            <span style="font-size:0.7rem; color:#9ca3af;">${new Date(ann.publish_at).toLocaleDateString('en-IN')}</span>
+                        </div>
+                        <p style="margin:0; font-size:0.8125rem; color:#4b5563; line-height:1.4;">${ann.body}</p>
+                        ${attachHtml}
+                    `;
+
+                    el.onclick = async () => {
+                        if (!ann.is_read) {
+                            await Api.post(`/user/announcements/${ann.announcement_id}/read`);
+                            ann.is_read = true;
+                            el.style.borderLeft = '1px solid #f3f4f6';
+                            el.style.background = '#f9fafb';
+                            const badge = el.querySelector('h3 span');
+                            if (badge) badge.remove();
+                        }
+                    };
+
+                    container.appendChild(el);
+                });
+            } else {
+                container.innerHTML = '<div style="font-size:0.8125rem; color:#ef4444; text-align:center;">Failed to load notices.</div>';
+            }
+        } catch (e) {}
+    }
 
     let profileData = {};
 
@@ -599,6 +682,164 @@
             border-radius:12px; font-size:0.875rem; font-weight:600; ${styles[status] || styles.not_placed}`;
         text.textContent = labels[status] || 'Not Placed';
     }
+
+    // ─── Documents Upload ────────────────────────────────────────────────────
+    const DOC_TYPES = {
+        photo:                { label: 'Passport Photo',          accept: 'image/*,.pdf',  icon: '📷' },
+        '10th_marksheet':     { label: '10th Marksheet',          accept: '.pdf',           icon: '📄' },
+        '12th_marksheet':     { label: '12th Marksheet',          accept: '.pdf',           icon: '📄' },
+        resume:               { label: 'Resume',                  accept: '.pdf',           icon: '📋' },
+        internship_certs:     { label: 'Internship Certificates', accept: '.pdf',           icon: '🏢' },
+        course_certs:         { label: 'Course Certificates',     accept: '.pdf',           icon: '🎓' },
+        category_certificate: { label: 'Category Certificate',    accept: '.pdf',           icon: '📜' },
+        pwd_certificate:      { label: 'PwD Certificate',         accept: '.pdf',           icon: '♿' },
+        ews_certificate:      { label: 'EWS Certificate',         accept: '.pdf',           icon: '📜' },
+    };
+
+    function renderDocumentCards() {
+        const grid = document.getElementById('doc-upload-grid');
+        grid.innerHTML = '';
+        const docs = safeJson(profileData.documents_json);
+
+        Object.entries(DOC_TYPES).forEach(([key, config]) => {
+            const uploaded = docs[key] || null;
+            const card = document.createElement('div');
+            card.id = `doc-card-${key}`;
+            card.style.cssText = `border:2px dashed ${uploaded ? '#10b981' : '#d1d5db'}; border-radius:12px; padding:20px; text-align:center; transition:all 0.2s; cursor:pointer; background:${uploaded ? '#f0fdf4' : '#fff'};`;
+
+            if (uploaded) {
+                card.innerHTML = `
+                    <div style="font-size:1.5rem; margin-bottom:8px;">${config.icon}</div>
+                    <div style="font-size:0.8125rem; font-weight:600; color:#065f46; margin-bottom:4px;">${config.label}</div>
+                    <div style="font-size:0.75rem; color:#10b981; margin-bottom:12px;">✅ Uploaded</div>
+                    <div style="display:flex; gap:8px; justify-content:center;">
+                        <a href="${uploaded}" target="_blank" style="padding:6px 12px; border-radius:8px; background:#f3f4f6; color:#374151; text-decoration:none; font-size:0.75rem; font-weight:500;">View</a>
+                        <button onclick="event.stopPropagation(); replaceDoc('${key}')" style="padding:6px 12px; border-radius:8px; background:#dbeafe; color:#1e40af; border:none; cursor:pointer; font-size:0.75rem; font-weight:500;">Replace</button>
+                        <button onclick="event.stopPropagation(); deleteDoc('${key}')" style="padding:6px 12px; border-radius:8px; background:#fee2e2; color:#991b1b; border:none; cursor:pointer; font-size:0.75rem; font-weight:500;">Delete</button>
+                    </div>
+                `;
+            } else {
+                card.innerHTML = `
+                    <div style="font-size:1.5rem; margin-bottom:8px;">${config.icon}</div>
+                    <div style="font-size:0.8125rem; font-weight:600; color:#374151; margin-bottom:4px;">${config.label}</div>
+                    <div style="font-size:0.75rem; color:#9ca3af; margin-bottom:4px;">Click to upload or drag & drop</div>
+                    <div style="font-size:0.7rem; color:#d1d5db;">PDF, JPEG, PNG • Max 5 MB</div>
+                `;
+                card.onclick = () => triggerUpload(key);
+
+                // Drag & Drop
+                card.ondragover = (e) => { e.preventDefault(); card.style.borderColor = '#8B2A8B'; card.style.background = '#fdf2f8'; };
+                card.ondragleave = () => { card.style.borderColor = '#d1d5db'; card.style.background = '#fff'; };
+                card.ondrop = (e) => {
+                    e.preventDefault();
+                    card.style.borderColor = '#d1d5db'; card.style.background = '#fff';
+                    if (e.dataTransfer.files.length > 0) {
+                        uploadFile(key, e.dataTransfer.files[0]);
+                    }
+                };
+            }
+
+            grid.appendChild(card);
+        });
+    }
+
+    function triggerUpload(docType) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = DOC_TYPES[docType].accept;
+        input.onchange = () => {
+            if (input.files.length > 0) {
+                uploadFile(docType, input.files[0]);
+            }
+        };
+        input.click();
+    }
+
+    function replaceDoc(docType) {
+        triggerUpload(docType);
+    }
+
+    async function uploadFile(docType, file) {
+        const card = document.getElementById(`doc-card-${docType}`);
+        const originalHtml = card.innerHTML;
+
+        // Show uploading state
+        card.innerHTML = `
+            <div style="font-size:1.5rem; margin-bottom:8px;">⏳</div>
+            <div style="font-size:0.8125rem; font-weight:600; color:#6b7280;">Uploading...</div>
+            <div style="margin-top:12px; background:#f3f4f6; border-radius:8px; height:4px; overflow:hidden;">
+                <div style="height:100%; background:#8B2A8B; width:50%; animation:pulse 1s infinite;"></div>
+            </div>
+        `;
+        card.style.borderColor = '#8B2A8B';
+        card.style.cursor = 'default';
+        card.onclick = null;
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('doc_type', docType);
+
+        try {
+            const token = Auth.getToken();
+            const response = await fetch(`${APP_CONFIG.API_BASE}/documents/upload`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData,
+            });
+            const res = await response.json();
+
+            if (res.status === 'success') {
+                Toast.success(res.message || 'Uploaded!');
+                await loadProfile();
+                renderDocumentCards();
+                loadStorageUsage();
+            } else {
+                Toast.error(res.message || 'Upload failed.');
+                card.innerHTML = originalHtml;
+                card.style.borderColor = '#d1d5db';
+                card.style.cursor = 'pointer';
+                card.onclick = () => triggerUpload(docType);
+            }
+        } catch (err) {
+            Toast.error('Network error. Please try again.');
+            card.innerHTML = originalHtml;
+            card.style.borderColor = '#d1d5db';
+            card.style.cursor = 'pointer';
+            card.onclick = () => triggerUpload(docType);
+        }
+    }
+
+    async function deleteDoc(docType) {
+        if (!confirm(`Delete ${DOC_TYPES[docType].label}? This cannot be undone.`)) return;
+
+        const res = await Api.delete(`/documents/${docType}`);
+        if (res.status === 'success') {
+            Toast.success('Document deleted.');
+            await loadProfile();
+            renderDocumentCards();
+            loadStorageUsage();
+        } else {
+            Toast.error(res.message || 'Delete failed.');
+        }
+    }
+
+    async function loadStorageUsage() {
+        const res = await Api.get('/documents/usage');
+        if (res.status === 'success') {
+            const usedMB = (res.data.used / (1024 * 1024)).toFixed(2);
+            const limitMB = (res.data.limit / (1024 * 1024)).toFixed(0);
+            document.getElementById('storage-usage').textContent = `${usedMB} MB / ${limitMB} MB used`;
+            document.getElementById('storage-bar').style.width = `${res.data.percentage}%`;
+        }
+    }
+
+    // Hook into initial load
+    const _origLoadProfile = loadProfile;
+    loadProfile = async function() {
+        await _origLoadProfile();
+        renderDocumentCards();
+        loadStorageUsage();
+    };
 </script>
 </body>
 </html>

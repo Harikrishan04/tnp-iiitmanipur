@@ -10,3 +10,5 @@
 *.log
 /tailwindcss
 cookies.txt
+/uploads/students/
+/uploads/recruiters/

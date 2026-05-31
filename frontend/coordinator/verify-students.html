@@ -38,9 +38,24 @@
 
         /* Modal Side Panel */
         .side-panel-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:40; display:none; justify-content:flex-end; }
-        .side-panel { width:500px; background:#fff; height:100%; box-shadow:-10px 0 25px -5px rgba(0,0,0,0.1); display:flex; flex-direction:column;
+        .side-panel { width:700px; max-width:90vw; background:#fff; height:100%; box-shadow:-10px 0 25px -5px rgba(0,0,0,0.1); display:flex; flex-direction:column;
                       transform:translateX(100%); transition:transform 0.3s ease-out; }
         .side-panel.open { transform:translateX(0); }
+
+        /* Accordion Styles */
+        details.checklist-item { border:1px solid #e5e7eb; border-radius:12px; margin-bottom:12px; background:#fff; overflow:hidden; transition:all 0.2s; }
+        details.checklist-item[open] { border-color:#8B2A8B; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05); }
+        summary.checklist-header { padding:16px; font-weight:600; color:#374151; cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; background:#f9fafb; transition:background 0.2s; }
+        summary.checklist-header:hover { background:#f3f4f6; }
+        summary.checklist-header::after { content:'▼'; font-size:0.75rem; color:#9ca3af; transition:transform 0.2s; }
+        details.checklist-item[open] summary.checklist-header::after { transform:rotate(180deg); }
+        .checklist-content { padding:16px; border-top:1px solid #e5e7eb; display:flex; flex-direction:column; gap:16px; }
+        
+        .radio-group { display:flex; gap:12px; margin-top:8px; }
+        .radio-btn { padding:8px 16px; border:1px solid #d1d5db; border-radius:8px; cursor:pointer; font-size:0.875rem; font-weight:500; display:flex; align-items:center; gap:6px; color:#4b5563; transition:all 0.2s; }
+        .radio-btn input { display:none; }
+        .radio-btn.approved { border-color:#10b981; background:#d1fae5; color:#065f46; }
+        .radio-btn.rejected { border-color:#ef4444; background:#fee2e2; color:#991b1b; }
     </style>
 </head>
 <body style="background:#f9fafb; font-family:Inter,system-ui,sans-serif;">
@@ -140,66 +155,50 @@
 <div id="panel-overlay" class="side-panel-overlay" onclick="closePanel(event)">
     <div class="side-panel" onclick="event.stopPropagation()">
         <!-- Header -->
-        <div style="padding:24px; border-bottom:1px solid #f3f4f6; display:flex; align-items:center; justify-content:space-between;">
+        <div style="padding:24px; border-bottom:1px solid #f3f4f6; display:flex; align-items:center; justify-content:space-between; background:#fff;">
             <h3 style="margin:0; font-size:1.125rem; font-weight:600; color:#1f2937;">Verify Student Profile</h3>
             <button onclick="hidePanel()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#9ca3af;">&times;</button>
         </div>
 
         <!-- Scrollable details body -->
-        <div style="flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:20px;">
-            <div style="display:flex; align-items:center; gap:16px;">
+        <div style="flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:24px; background:#f9fafb;">
+            
+            <!-- Student Banner -->
+            <div style="display:flex; align-items:center; gap:16px; background:#fff; padding:16px; border-radius:12px; border:1px solid #e5e7eb;">
                 <div id="panel-avatar" style="width:56px; height:56px; border-radius:50%; background:#fce7f3;
                      display:flex; align-items:center; justify-content:center;
-                     font-weight:700; font-size:1.5rem; color:#8B2A8B;">?</div>
-                <div>
+                     font-weight:700; font-size:1.5rem; color:#8B2A8B; flex-shrink:0;">?</div>
+                <div style="flex:1;">
                     <h4 id="panel-name" style="margin:0 0 4px; font-size:1.125rem; font-weight:600; color:#1f2937;">Name</h4>
                     <span id="panel-roll" style="font-size:0.875rem; color:#6b7280;">Roll Number</span>
                 </div>
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                <div>
-                    <label style="font-size:0.75rem; color:#6b7280; font-weight:500;">Department</label>
-                    <div id="panel-dept" style="font-size:0.875rem; font-weight:600; color:#1f2937; margin-top:4px;">-</div>
-                </div>
-                <div>
-                    <label style="font-size:0.75rem; color:#6b7280; font-weight:500;">Program</label>
-                    <div id="panel-program" style="font-size:0.875rem; font-weight:600; color:#1f2937; margin-top:4px;">-</div>
-                </div>
-                <div>
-                    <label style="font-size:0.75rem; color:#6b7280; font-weight:500;">CPI / CGPA</label>
-                    <div id="panel-cpi" style="font-size:0.875rem; font-weight:600; color:#1f2937; margin-top:4px;">-</div>
-                </div>
-                <div>
-                    <label style="font-size:0.75rem; color:#6b7280; font-weight:500;">Semester</label>
-                    <div id="panel-sem" style="font-size:0.875rem; font-weight:600; color:#1f2937; margin-top:4px;">-</div>
+            <!-- Dynamic Expandable Checklist -->
+            <div>
+                <h4 style="font-size:0.875rem; font-weight:600; color:#6b7280; text-transform:uppercase; margin-bottom:12px; letter-spacing:0.5px;">Verification Checklist</h4>
+                <div id="checklist-container">
+                    <!-- Javascript will populate this -->
                 </div>
             </div>
 
-            <!-- Documents Section -->
-            <div id="panel-docs-container" style="display:none;">
-                <label style="font-size:0.75rem; color:#6b7280; font-weight:500; display:block; margin-bottom:8px;">Documents</label>
-                <div id="panel-docs-list" style="display:flex; flex-direction:column; gap:8px;"></div>
-            </div>
-
-            <!-- Action Area -->
-            <div style="border-top:1px solid #f3f4f6; padding-top:20px;">
-                <label style="font-size:0.75rem; color:#6b7280; font-weight:500; display:block; margin-bottom:8px;">Remarks / Notes</label>
-                <textarea id="panel-remark" class="input-field" style="height:80px; resize:none;" placeholder="Enter verification notes or reasons for rejection/resubmission..."></textarea>
+            <!-- Overall Remarks -->
+            <div style="background:#fff; padding:16px; border-radius:12px; border:1px solid #e5e7eb;">
+                <label style="font-size:0.875rem; color:#374151; font-weight:600; display:block; margin-bottom:8px;">Additional Overall Remarks</label>
+                <textarea id="panel-remark" class="input-field" style="height:80px; resize:none; margin:0;" placeholder="General notes (optional)..."></textarea>
             </div>
 
             <!-- Logs / History -->
-            <div>
-                <label style="font-size:0.75rem; color:#6b7280; font-weight:500; display:block; margin-bottom:8px;">Verification History</label>
+            <div style="background:#fff; padding:16px; border-radius:12px; border:1px solid #e5e7eb;">
+                <label style="font-size:0.875rem; color:#374151; font-weight:600; display:block; margin-bottom:12px;">Verification History</label>
                 <div id="panel-logs" style="display:flex; flex-direction:column; gap:10px; font-size:0.8125rem;"></div>
             </div>
         </div>
 
         <!-- Footer Buttons -->
-        <div style="padding:24px; border-top:1px solid #f3f4f6; display:flex; gap:12px; background:#f9fafb;">
-            <button onclick="submitStatus('resubmit')" class="btn-primary" style="flex:1; background:#d97706; color:#fff;">Request Resubmit</button>
-            <button onclick="submitStatus('rejected')" class="btn-primary" style="flex:1; background:#ef4444; color:#fff;">Reject</button>
-            <button onclick="submitStatus('verified')" class="btn-primary" style="flex:1.5; background:#10b981; color:#fff;">Verify Profile</button>
+        <div style="padding:20px 24px; border-top:1px solid #f3f4f6; display:flex; justify-content:flex-end; gap:12px; background:#fff;">
+            <button onclick="hidePanel()" style="padding:10px 16px; border:1px solid #d1d5db; border-radius:10px; background:#fff; font-weight:500; cursor:pointer;">Cancel</button>
+            <button onclick="submitChecklist()" class="btn-primary" style="width:auto; padding:10px 24px; background:#8B2A8B;">Submit Verification</button>
         </div>
     </div>
 </div>
@@ -274,6 +273,14 @@
         }
     }
 
+    const VERIFICATION_CONFIG = [
+        { id: 'acad_10', label: '10th Academics', docs: ['10th_marksheet'], fields: ['board_10th', 'passing_year_10th', 'percentage_10th'] },
+        { id: 'acad_12', label: '12th/Diploma Academics', docs: ['12th_marksheet', 'diploma_marksheet'], fields: ['board_12th', 'passing_year_12th', 'percentage_12th'] },
+        { id: 'acad_degree', label: 'B.Tech Details', docs: ['semester_grade_cards'], fields: ['department_name', 'cpi', 'current_semester'] },
+        { id: 'category', label: 'Category & PwD', docs: ['category_certificate', 'pwd_certificate', 'ews_certificate'], fields: ['category', 'is_pwd'] },
+        { id: 'resume', label: 'Resume', docs: ['resume'], fields: [] }
+    ];
+
     async function viewDetails(id) {
         document.getElementById('loading-overlay').style.display = 'flex';
         const res = await Api.get(`/verifications/${id}`);
@@ -290,39 +297,80 @@
 
         document.getElementById('panel-name').textContent = details.name || 'No Name';
         document.getElementById('panel-roll').textContent = details.roll_no || '-';
-        document.getElementById('panel-dept').textContent = details.department_name || '-';
-        document.getElementById('panel-program').textContent = details.program_name || '-';
-        document.getElementById('panel-cpi').textContent = details.cpi || '-';
-        document.getElementById('panel-sem').textContent = details.current_semester || '-';
-        document.getElementById('panel-remark').value = verif.remark || '';
         document.getElementById('panel-avatar').textContent = (details.name?.[0] || '?').toUpperCase();
+        document.getElementById('panel-remark').value = verif.remark || '';
 
-        // Render documents if present
-        const docsContainer = document.getElementById('panel-docs-container');
-        const docsList = document.getElementById('panel-docs-list');
-        docsList.innerHTML = '';
-        if (details.documents_json) {
-            try {
-                const docs = typeof details.documents_json === 'string' ? JSON.parse(details.documents_json) : details.documents_json;
-                const keys = Object.keys(docs);
-                if (keys.length > 0) {
-                    docsContainer.style.display = 'block';
-                    keys.forEach(k => {
-                        const link = document.createElement('a');
-                        link.href = docs[k];
-                        link.target = '_blank';
-                        link.style.cssText = 'color:#8B2A8B; font-weight:500; text-decoration:none; font-size:0.8125rem; display:inline-block;';
-                        link.innerHTML = `📄 Open ${k.replace(/_/g, ' ').toUpperCase()}`;
-                        docsList.appendChild(link);
-                    });
-                } else {
-                    docsContainer.style.display = 'none';
+        // Parse JSONs safely
+        const docs = typeof details.documents_json === 'string' ? (JSON.parse(details.documents_json) || {}) : (details.documents_json || {});
+        const edu = typeof details.education_json === 'string' ? (JSON.parse(details.education_json) || {}) : (details.education_json || {});
+        
+        // Merge edu and basic details for easy lookup
+        const mergedData = { ...details, ...edu };
+
+        const checklistContainer = document.getElementById('checklist-container');
+        checklistContainer.innerHTML = '';
+
+        VERIFICATION_CONFIG.forEach(config => {
+            // Check if any docs or fields exist for this category to avoid empty useless accordions
+            let hasDocs = false;
+            let docsHtml = '';
+            config.docs.forEach(docKey => {
+                if (docs[docKey]) {
+                    hasDocs = true;
+                    docsHtml += `<a href="${docs[docKey]}" target="_blank" style="display:inline-flex; align-items:center; gap:6px; background:#f3f4f6; padding:8px 12px; border-radius:8px; font-size:0.8125rem; color:#4b5563; text-decoration:none; font-weight:500;"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg> View ${docKey.replace(/_/g, ' ').toUpperCase()}</a>`;
                 }
-            } catch(e) {
-                docsContainer.style.display = 'none';
-            }
-        } else {
-            docsContainer.style.display = 'none';
+            });
+
+            let fieldsHtml = '';
+            config.fields.forEach(fieldKey => {
+                const val = mergedData[fieldKey];
+                if (val !== undefined && val !== null && val !== '') {
+                    fieldsHtml += `<div style="background:#f9fafb; padding:10px 14px; border-radius:8px; border:1px solid #f3f4f6;">
+                        <span style="display:block; font-size:0.7rem; text-transform:uppercase; color:#6b7280; font-weight:600; margin-bottom:2px;">${fieldKey.replace(/_/g, ' ')}</span>
+                        <span style="font-size:0.875rem; color:#1f2937; font-weight:500;">${val}</span>
+                    </div>`;
+                }
+            });
+
+            // If completely empty, skip rendering this section (e.g. general category has no docs)
+            if (!hasDocs && fieldsHtml === '') return;
+
+            const itemHtml = `
+                <details class="checklist-item" id="chk-${config.id}">
+                    <summary class="checklist-header">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span id="badge-${config.id}" style="width:12px; height:12px; border-radius:50%; background:#d1d5db; display:inline-block;"></span>
+                            ${config.label}
+                        </div>
+                    </summary>
+                    <div class="checklist-content">
+                        ${fieldsHtml ? `<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:8px;">${fieldsHtml}</div>` : ''}
+                        ${docsHtml ? `<div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px;">${docsHtml}</div>` : ''}
+                        
+                        <div style="border-top:1px solid #e5e7eb; padding-top:12px; margin-top:4px;">
+                            <label style="font-size:0.8125rem; font-weight:600; color:#374151;">Status</label>
+                            <div class="radio-group">
+                                <label class="radio-btn" onclick="selectStatus('${config.id}', 'approved', this)">
+                                    <input type="radio" name="status_${config.id}" value="approved">
+                                    👍 Approve
+                                </label>
+                                <label class="radio-btn" onclick="selectStatus('${config.id}', 'rejected', this)">
+                                    <input type="radio" name="status_${config.id}" value="rejected">
+                                    👎 Reject
+                                </label>
+                            </div>
+                            <div id="remark-box-${config.id}" style="display:none; margin-top:12px;">
+                                <input type="text" id="remark-input-${config.id}" placeholder="Specify issue (e.g., document blurry, mismatch...)" style="width:100%; padding:8px 12px; border:1px solid #ef4444; border-radius:8px; font-size:0.8125rem; outline:none;">
+                            </div>
+                        </div>
+                    </div>
+                </details>
+            `;
+            checklistContainer.insertAdjacentHTML('beforeend', itemHtml);
+        });
+
+        if (checklistContainer.innerHTML === '') {
+            checklistContainer.innerHTML = '<div style="color:#6b7280; font-size:0.875rem; font-style:italic;">No trackable documents or data found for this profile.</div>';
         }
 
         // Render audit logs
@@ -354,7 +402,34 @@
         overlay.style.display = 'flex';
         setTimeout(() => {
             overlay.querySelector('.side-panel').classList.add('open');
+            // Auto-expand first item
+            const firstItem = document.querySelector('details.checklist-item');
+            if(firstItem) firstItem.open = true;
         }, 50);
+    }
+
+    function selectStatus(id, status, labelElement) {
+        // Reset classes for siblings
+        const siblings = labelElement.parentElement.querySelectorAll('.radio-btn');
+        siblings.forEach(el => {
+            el.classList.remove('approved', 'rejected');
+        });
+        
+        // Add class to selected
+        labelElement.classList.add(status);
+        
+        // Update badge
+        const badge = document.getElementById(`badge-${id}`);
+        badge.style.background = status === 'approved' ? '#10b981' : '#ef4444';
+
+        // Toggle remark box
+        const remarkBox = document.getElementById(`remark-box-${id}`);
+        if (status === 'rejected') {
+            remarkBox.style.display = 'block';
+            document.getElementById(`remark-input-${id}`).focus();
+        } else {
+            remarkBox.style.display = 'none';
+        }
     }
 
     function hidePanel() {
@@ -371,25 +446,64 @@
         }
     }
 
-    async function submitStatus(status) {
+    async function submitChecklist() {
         if (!activeVerificationId) return;
 
-        const remark = document.getElementById('panel-remark').value;
+        let allApproved = true;
+        let compiledRemarks = [];
+        let missingSelection = false;
+
+        // Loop through all rendered checklist items
+        const items = document.querySelectorAll('details.checklist-item');
+        if (items.length === 0) {
+            // Edge case: empty profile
+            compiledRemarks.push("Profile lacks necessary data for verification.");
+            allApproved = false;
+        } else {
+            items.forEach(detailsEl => {
+                const id = detailsEl.id.replace('chk-', '');
+                const label = detailsEl.querySelector('.checklist-header').innerText.replace('▼','').trim();
+                const approvedRadio = detailsEl.querySelector(`input[value="approved"]`);
+                const rejectedRadio = detailsEl.querySelector(`input[value="rejected"]`);
+
+                if (approvedRadio.checked) {
+                    // All good
+                } else if (rejectedRadio.checked) {
+                    allApproved = false;
+                    const specificReason = document.getElementById(`remark-input-${id}`).value.trim();
+                    compiledRemarks.push(`- [${label}]: ${specificReason || 'Needs revision'}`);
+                } else {
+                    missingSelection = true;
+                }
+            });
+        }
+
+        if (missingSelection) {
+            Toast.error('Please make an Approve/Reject decision for every section.');
+            return;
+        }
+
+        const generalRemark = document.getElementById('panel-remark').value.trim();
+        if (generalRemark) {
+            compiledRemarks.push(`- [General]: ${generalRemark}`);
+        }
+
+        const finalStatus = allApproved ? 'verified' : 'resubmit';
+        const finalRemarkString = compiledRemarks.join('\n');
+
         document.getElementById('loading-overlay').style.display = 'flex';
-
         const res = await Api.put(`/verifications/${activeVerificationId}`, {
-            status: status,
-            remark: remark
+            status: finalStatus,
+            remark: finalRemarkString
         });
-
         document.getElementById('loading-overlay').style.display = 'none';
 
         if (res.status === 'success') {
-            Toast.success(`Verification status updated to ${status}.`);
+            Toast.success(`Profile has been marked as ${finalStatus.toUpperCase()}.`);
             hidePanel();
             await loadVerifications();
         } else {
-            Toast.error(res.message || 'Failed to update status.');
+            Toast.error(res.message || 'Failed to update verification.');
         }
     }
 </script>
