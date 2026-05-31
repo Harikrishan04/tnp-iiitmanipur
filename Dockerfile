@@ -1,16 +1,15 @@
 FROM php:8.3-apache
 
-# Enable Apache mod_rewrite and configure dynamic PORT
-RUN a2enmod rewrite headers \
-    && a2dismod mpm_event mpm_worker || true \
-    && a2enmod mpm_prefork \
-    && sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf
-
-# Install PHP extensions
+# Install PHP extensions and configure Apache
 RUN apt-get update && apt-get install -y \
     libzip-dev libxml2-dev libicu-dev libonig-dev \
     && docker-php-ext-install pdo_mysql mysqli zip intl mbstring xml \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && a2enmod rewrite headers \
+    && rm -f /etc/apache2/mods-enabled/mpm_event.conf /etc/apache2/mods-enabled/mpm_event.load \
+    && rm -f /etc/apache2/mods-enabled/mpm_worker.conf /etc/apache2/mods-enabled/mpm_worker.load \
+    && a2enmod mpm_prefork \
+    && sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
