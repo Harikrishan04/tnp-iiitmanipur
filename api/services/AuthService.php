@@ -112,8 +112,8 @@ class AuthService
             return ['success' => false, 'message' => 'Too many OTP requests. Please wait a few minutes.'];
         }
 
-        // Generate OTP
-        $otp = '123456';
+        // Generate OTP (cryptographically random 6-digit)
+        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $otpHash   = hash('sha256', $otp);
         $expiry    = (int) ($_ENV['OTP_EXPIRY_MINUTES'] ?? 5);
 

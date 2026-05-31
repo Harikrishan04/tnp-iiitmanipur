@@ -22,6 +22,18 @@ use App\Controllers\AdminController;
 use App\Controllers\DocumentController;
 use App\Controllers\RoundController;
 
+// ─── Health Check (Railway / load balancers) ──────────────────────────────────
+$router->get('/health', function() {
+    try {
+        $db = \App\Config\Database::getInstance();
+        $db->query('SELECT 1');
+        \App\Helpers\Response::success(['status' => 'ok', 'db' => 'connected', 'ts' => time()]);
+    } catch (\Exception $e) {
+        http_response_code(503);
+        echo json_encode(['status' => 'error', 'db' => 'disconnected']);
+    }
+});
+
 // ─── Auth (no auth required) ─────────────────────────────────────────────────
 $router->group('/auth', function ($router) {
     $router->post('/login',      [AuthController::class, 'login']);

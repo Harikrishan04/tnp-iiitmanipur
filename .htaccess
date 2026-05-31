@@ -1,0 +1,15 @@
+# Root .htaccess — redirect root to frontend
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # If accessing root, redirect to frontend
+    RewriteRule ^$ /frontend/login.html [R=302,L]
+
+    # API requests go to api/index.php
+    RewriteRule ^api/(.*)$ /api/index.php [L,QSA]
+</IfModule>
+
+# Protect sensitive files
+<FilesMatch "(\.env|composer\.json|composer\.lock|\.git)">
+    Require all denied
+</FilesMatch>
