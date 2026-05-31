@@ -1,7 +1,10 @@
 FROM php:8.3-apache
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite headers
+# Enable Apache mod_rewrite and configure dynamic PORT
+RUN a2enmod rewrite headers \
+    && a2dismod mpm_event mpm_worker || true \
+    && a2enmod mpm_prefork \
+    && sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf
 
 # Install PHP extensions
 RUN apt-get update && apt-get install -y \
@@ -34,6 +37,5 @@ RUN chown -R www-data:www-data /var/www/html \
     && find /var/www/html -type f -name "*.php" -exec chmod 644 {} \; \
     && find /var/www/html -type d -exec chmod 755 {} \;
 
-EXPOSE 80
 
 CMD ["apache2-foreground"]
