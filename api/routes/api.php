@@ -20,6 +20,7 @@ use App\Controllers\RecruiterController;
 use App\Controllers\CoordinatorController;
 use App\Controllers\AdminController;
 use App\Controllers\DocumentController;
+use App\Controllers\RoundController;
 
 // ─── Auth (no auth required) ─────────────────────────────────────────────────
 $router->group('/auth', function ($router) {
@@ -110,4 +111,29 @@ $router->group('/public/announcements', function ($router) {
 $router->group('/user/announcements', function ($router) {
     $router->get('',            [App\Controllers\AnnouncementController::class, 'listForUser'], ['auth']);
     $router->post('/{id}/read', [App\Controllers\AnnouncementController::class, 'markAsRead'],  ['auth']);
+});
+
+// ─── Placement Drive Lifecycle (coordinator/admin) ────────────────────────────
+$router->group('/rounds', function ($router) {
+    // Job status transitions
+    $router->put('/jobs/{id}/open',    [RoundController::class, 'openJob'],       ['auth', 'role:coordinator,admin']);
+    $router->put('/jobs/{id}/close',   [RoundController::class, 'closeJob'],      ['auth', 'role:coordinator,admin']);
+
+    // Round management
+    $router->get('/types',             [RoundController::class, 'getRoundTypes'], ['auth']);
+    $router->get('/jobs/{id}/rounds',  [RoundController::class, 'listRounds'],    ['auth', 'role:coordinator,admin,recruiter']);
+    $router->post('/jobs/{id}/rounds', [RoundController::class, 'addRound'],      ['auth', 'role:coordinator,admin']);
+
+    // Round lifecycle
+    $router->put('/{id}/start',        [RoundController::class, 'startRound'],    ['auth', 'role:coordinator,admin']);
+    $router->put('/{id}/results',      [RoundController::class, 'enterResults'],  ['auth', 'role:coordinator,admin']);
+    $router->put('/{id}/end',          [RoundController::class, 'endRound'],      ['auth', 'role:coordinator,admin']);
+    $router->put('/{id}/publish',      [RoundController::class, 'publishResults'],['auth', 'role:coordinator,admin']);
+    $router->get('/{id}/results',      [RoundController::class, 'getRoundResults'],['auth', 'role:coordinator,admin']);
+
+    // Final selection
+    $router->post('/jobs/{id}/select', [RoundController::class, 'selectStudents'],['auth', 'role:coordinator,admin']);
+
+    // Student view (own results)
+    $router->get('/jobs/{id}/my-results', [RoundController::class, 'getMyResults'], ['auth', 'role:student']);
 });
