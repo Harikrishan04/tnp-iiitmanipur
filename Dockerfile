@@ -1,13 +1,18 @@
 FROM php:8.3-apache
 
-# Install PHP extensions and configure Apache
+# Install PHP extensions and enable required Apache modules
 RUN apt-get update && apt-get install -y \
     libzip-dev libxml2-dev libicu-dev libonig-dev \
     && docker-php-ext-install pdo_mysql mysqli zip intl mbstring xml \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
-    && a2enmod rewrite headers \
-    && rm -f /etc/apache2/mods-enabled/mpm_event.conf /etc/apache2/mods-enabled/mpm_event.load \
-    && rm -f /etc/apache2/mods-enabled/mpm_worker.conf /etc/apache2/mods-enabled/mpm_worker.load \
+    && a2enmod rewrite headers
+
+# Remove conflicting MPM modules AFTER apt-get so they cannot be re-introduced,
+# then activate mpm_prefork and configure Apache to listen on Railway's dynamic PORT.
+RUN rm -f /etc/apache2/mods-enabled/mpm_event.load \
+    && rm -f /etc/apache2/mods-enabled/mpm_event.conf \
+    && rm -f /etc/apache2/mods-enabled/mpm_worker.load \
+    && rm -f /etc/apache2/mods-enabled/mpm_worker.conf \
     && a2enmod mpm_prefork \
     && sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf
 
