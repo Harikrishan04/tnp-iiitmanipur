@@ -7,14 +7,8 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && a2enmod rewrite headers
 
-# Remove conflicting MPM modules AFTER apt-get so they cannot be re-introduced,
-# then activate mpm_prefork and configure Apache to listen on Railway's dynamic PORT.
-RUN rm -f /etc/apache2/mods-enabled/mpm_event.load \
-    && rm -f /etc/apache2/mods-enabled/mpm_event.conf \
-    && rm -f /etc/apache2/mods-enabled/mpm_worker.load \
-    && rm -f /etc/apache2/mods-enabled/mpm_worker.conf \
-    && a2enmod mpm_prefork \
-    && sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf
+# Configure Apache to listen on Railway's dynamic PORT
+RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
