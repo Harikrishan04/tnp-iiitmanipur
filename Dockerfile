@@ -35,5 +35,8 @@ RUN chown -R www-data:www-data /var/www/html \
     && find /var/www/html -type f -name "*.php" -exec chmod 644 {} \; \
     && find /var/www/html -type d -exec chmod 755 {} \;
 
+# Copy and configure startup script
+COPY docker/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
 
-CMD ["apache2-foreground"]
+CMD ["/usr/local/bin/start.sh"]
