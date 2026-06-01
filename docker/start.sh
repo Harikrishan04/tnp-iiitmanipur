@@ -1,19 +1,13 @@
 #!/bin/bash
 set -e
 
-echo "Cleaning up Apache MPM modules..."
-# Aggressively remove any event or worker MPM configuration
-rm -f /etc/apache2/mods-enabled/mpm_event.conf
-rm -f /etc/apache2/mods-enabled/mpm_event.load
-rm -f /etc/apache2/mods-enabled/mpm_worker.conf
-rm -f /etc/apache2/mods-enabled/mpm_worker.load
+echo "Cleaning up Apache MPM modules via official a2dismod..."
+# Disable all possible MPMs first
+a2dismod mpm_event mpm_worker mpm_prefork || true
 
-# Ensure prefork is enabled
+# Explicitly enable prefork (required for mod_php)
 a2enmod mpm_prefork
 
-# Verify what's enabled
-echo "Enabled Apache modules:"
-ls -l /etc/apache2/mods-enabled/ | grep mpm
-
 echo "Starting Apache..."
-exec apache2-foreground
+# Execute the main process command
+exec "$@"
