@@ -122,11 +122,14 @@ class AuthService
         $this->otpModel->create($user['user_id'], $otpHash, 'login', $expiry, $ipAddress);
 
         // Send via email
-        $emailSent = $this->sendOtpEmail($email, $otp);
-
-        if (!$emailSent) {
-            Logger::error('auth', "Failed to send OTP email", ['email' => $email]);
-            return ['success' => false, 'message' => 'Failed to send OTP. Please try again.'];
+        try {
+            $emailSent = $this->sendOtpEmail($email, $otp);
+            if (!$emailSent) {
+                Logger::error('auth', "Failed to send OTP email", ['email' => $email]);
+                return ['success' => false, 'message' => 'Failed to send OTP. Please try again.'];
+            }
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => 'SMTP Error: ' . $e->getMessage()];
         }
 
         Logger::info('auth', "OTP sent", ['email' => $email, 'role' => $role]);
@@ -239,7 +242,7 @@ class AuthService
             return $this->sendOtpViaPhpMailer($email, $otp);
         } catch (\Exception $e) {
             Logger::error('auth', "Email send error", ['email' => $email, 'error' => $e->getMessage()]);
-            return false;
+            throw $e; // Rethrow to catch block above
         }
     }
 
