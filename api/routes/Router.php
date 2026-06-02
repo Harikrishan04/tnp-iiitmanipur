@@ -46,7 +46,7 @@ class Router
     /**
      * Register a GET route.
      */
-    public function get(string $path, array $handler, array $middleware = []): void
+    public function get(string $path, callable|array $handler, array $middleware = []): void
     {
         $this->addRoute('GET', $path, $handler, $middleware);
     }
@@ -54,7 +54,7 @@ class Router
     /**
      * Register a POST route.
      */
-    public function post(string $path, array $handler, array $middleware = []): void
+    public function post(string $path, callable|array $handler, array $middleware = []): void
     {
         $this->addRoute('POST', $path, $handler, $middleware);
     }
@@ -62,7 +62,7 @@ class Router
     /**
      * Register a PUT route.
      */
-    public function put(string $path, array $handler, array $middleware = []): void
+    public function put(string $path, callable|array $handler, array $middleware = []): void
     {
         $this->addRoute('PUT', $path, $handler, $middleware);
     }
@@ -70,7 +70,7 @@ class Router
     /**
      * Register a DELETE route.
      */
-    public function delete(string $path, array $handler, array $middleware = []): void
+    public function delete(string $path, callable|array $handler, array $middleware = []): void
     {
         $this->addRoute('DELETE', $path, $handler, $middleware);
     }
@@ -78,7 +78,7 @@ class Router
     /**
      * Internal: register a route entry.
      */
-    private function addRoute(string $method, string $path, array $handler, array $middleware): void
+    private function addRoute(string $method, string $path, callable|array $handler, array $middleware): void
     {
         $fullPath = $this->prefix . $path;
 
@@ -139,10 +139,14 @@ class Router
                 // Run middleware
                 $user = $this->runMiddleware($route['middleware']);
 
-                // Instantiate controller and call method
-                [$controllerClass, $methodName] = $route['handler'];
-                $controller = new $controllerClass();
-                $controller->$methodName($params, $user);
+                // Instantiate controller and call method if array, or invoke if callable
+                if (is_callable($route['handler'])) {
+                    call_user_func($route['handler'], $params, $user);
+                } else {
+                    [$controllerClass, $methodName] = $route['handler'];
+                    $controller = new $controllerClass();
+                    $controller->$methodName($params, $user);
+                }
                 return;
             }
         }

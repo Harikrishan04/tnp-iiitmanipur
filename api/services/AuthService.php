@@ -253,8 +253,8 @@ class AuthService
         $mail->isSMTP();
         $mail->Host       = $_ENV['SMTP_HOST'] ?? 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = $_ENV['SMTP_USERNAME'] ?? '';
-        $mail->Password   = $_ENV['SMTP_PASSWORD'] ?? '';
+        $mail->Username   = $_ENV['SMTP_USER'] ?? $_ENV['SMTP_USERNAME'] ?? '';
+        $mail->Password   = $_ENV['SMTP_PASS'] ?? $_ENV['SMTP_PASSWORD'] ?? '';
         $mail->SMTPSecure = 'tls';
         $mail->Port       = (int) ($_ENV['SMTP_PORT'] ?? 587);
 

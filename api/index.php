@@ -14,15 +14,37 @@ declare(strict_types=1);
 
 // ─── Error Handling ──────────────────────────────────────────────────────────
 error_reporting(E_ALL);
-ini_set('display_errors', '0'); // Never display errors in API responses
+ini_set('display_errors', '0'); // Never display raw HTML errors in API responses
 ini_set('log_errors', '1');
+
+// Global exception handler to return 500 errors as JSON
+set_exception_handler(function (\Throwable $e) {
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Internal Server Error',
+        'details' => $e->getMessage()
+    ]);
+    exit;
+});
 
 // ─── Composer Autoload ───────────────────────────────────────────────────────
 require_once __DIR__ . '/vendor/autoload.php';
 
 // ─── Load Environment ────────────────────────────────────────────────────────
 $dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
-$dotenv->load();
+$dotenv->safeLoad();
+
+// Merge system environment variables into $_ENV for production/Render environments
+foreach (getenv() as $key => $value) {
+    if (!isset($_ENV[$key])) $_ENV[$key] = $value;
+}
+foreach ($_SERVER as $key => $value) {
+    if (is_string($value) && !isset($_ENV[$key])) {
+        $_ENV[$key] = $value;
+    }
+}
 
 // ─── PSR-4 Autoloader for App namespace ──────────────────────────────────────
 spl_autoload_register(function (string $class) {
@@ -57,14 +79,22 @@ spl_autoload_register(function (string $class) {
 // ─── Response Headers ────────────────────────────────────────────────────────
 header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
 // ─── Parse Request ───────────────────────────────────────────────────────────
 $method = $_SERVER['REQUEST_METHOD'];
 $uri    = $_SERVER['REQUEST_URI'];
 
 // Remove the base path prefix to get the API-relative path
-// e.g., /tnp@iiitmanipur/api/auth/login → /auth/login
-$basePath = '/tnp@iiitmanipur/api';
+// Dynamically determine base path based on script location
+$scriptName = $_SERVER['SCRIPT_NAME']; // e.g., /tnp@iiitmanipur/api/index.php or /api/index.php or /index.php
+$basePath = dirname($scriptName);
+if ($basePath === '\\' || $basePath === '/') {
+    $basePath = '';
+}
+
 $path = parse_url($uri, PHP_URL_PATH);
 
 if (str_starts_with($path, $basePath)) {
