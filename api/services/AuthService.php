@@ -232,13 +232,7 @@ class AuthService
     private function sendOtpEmail(string $email, string $otp): bool
     {
         try {
-            // Use the existing Mailer from the legacy codebase
-            // It's autoloaded via the vendor symlink
-            if (class_exists(\TnpPortal\Mailer::class)) {
-                return \TnpPortal\Mailer::sendOtp($email, $otp);
-            }
-
-            // Fallback: use PHPMailer directly
+            // Use PHPMailer directly to ensure .env settings and timeouts are respected
             return $this->sendOtpViaPhpMailer($email, $otp);
         } catch (\Exception $e) {
             Logger::error('auth', "Email send error", ['email' => $email, 'error' => $e->getMessage()]);
