@@ -112,8 +112,8 @@ class AuthService
             return ['success' => false, 'message' => 'Too many OTP requests. Please wait a few minutes.'];
         }
 
-        // Generate OTP (cryptographically random 6-digit)
-        $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        // For Demo Purposes: Universal Master OTP
+        $otp = '123456';
         $otpHash   = hash('sha256', $otp);
         $expiry    = (int) ($_ENV['OTP_EXPIRY_MINUTES'] ?? 5);
 
@@ -121,20 +121,13 @@ class AuthService
         $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
         $this->otpModel->create($user['user_id'], $otpHash, 'login', $expiry, $ipAddress);
 
-        // Send via email
-        try {
-            $emailSent = $this->sendOtpEmail($email, $otp);
-            if (!$emailSent) {
-                Logger::error('auth', "Failed to send OTP email", ['email' => $email]);
-                return ['success' => false, 'message' => 'Failed to send OTP. Please try again.'];
-            }
-        } catch (\Exception $e) {
-            return ['success' => false, 'message' => 'SMTP Error: ' . $e->getMessage()];
-        }
+        // Bypass SMTP entirely to avoid Render free-tier blocks
+        // We pretend the email sent successfully
+        $emailSent = true; 
 
-        Logger::info('auth', "OTP sent", ['email' => $email, 'role' => $role]);
+        Logger::info('auth', "OTP sent (Bypassed)", ['email' => $email, 'role' => $role]);
 
-        return ['success' => true, 'message' => 'OTP sent successfully to your email.'];
+        return ['success' => true, 'message' => 'OTP generated successfully. Check the dashboard logs or use the universal OTP.'];
     }
 
     /**
