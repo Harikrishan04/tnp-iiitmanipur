@@ -254,9 +254,12 @@ class AuthService
         $mail->Host       = $_ENV['SMTP_HOST'] ?? 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
         $mail->Username   = $_ENV['SMTP_USER'] ?? $_ENV['SMTP_USERNAME'] ?? '';
-        $mail->Password   = $_ENV['SMTP_PASS'] ?? $_ENV['SMTP_PASSWORD'] ?? '';
+        $pass             = $_ENV['SMTP_PASS'] ?? $_ENV['SMTP_PASSWORD'] ?? '';
+        $mail->Password   = str_replace(' ', '', $pass);
         $mail->SMTPSecure = 'tls';
         $mail->Port       = (int) ($_ENV['SMTP_PORT'] ?? 587);
+        $mail->Timeout    = 10; // Fail fast instead of hanging
+        $mail->SMTPKeepAlive = false;
 
         $mail->setFrom(
             $_ENV['SMTP_FROM_EMAIL'] ?? 'noreply@iiitmanipur.ac.in',
