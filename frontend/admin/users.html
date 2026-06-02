@@ -23,6 +23,18 @@
 
         .panel-card { background:#fff; border-radius:20px; border:1px solid #f3f4f6; padding:24px;
                       box-shadow:0 4px 6px -1px rgba(0,0,0,0.02); }
+    
+        @media (max-width: 768px) {
+            #sidebar { position: fixed !important; left: -256px; transition: left 0.3s ease; z-index: 100; height: 100vh; box-shadow: 4px 0 15px rgba(0,0,0,0.1); }
+            #sidebar.open { left: 0; }
+            #mobile-menu-btn { display: block !important; }
+            .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+            .mobile-overlay.open { display: block; }
+            header { padding: 16px !important; }
+            main { padding: 16px !important; }
+            .field-grid { grid-template-columns: 1fr !important; }
+        }
+
     </style>
 </head>
 <body style="background:#f9fafb; font-family:Inter,system-ui,sans-serif;">
@@ -74,7 +86,10 @@
     <div id="main-area">
         <header style="background:#fff; border-bottom:1px solid #f3f4f6; padding:16px 32px;
                         display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10;">
-            <h1 style="font-size:1.25rem; font-weight:600; color:#1f2937; margin:0;">User Management</h1>
+            <div style="display:flex; align-items:center;">
+                <button id="mobile-menu-btn" style="display:none; background:none; border:none; font-size:1.5rem; cursor:pointer; margin-right:16px; padding:0;" onclick="toggleSidebar()">☰</button>
+                <h1 style="font-size:1.25rem; font-weight:600; color:#1f2937; margin:0;">User Management</h1>
+            </div>
             <button onclick="openCoordinatorModal()" class="btn-primary" style="width:auto; padding:8px 16px; font-size:0.875rem;">
                 + Add Coordinator
             </button>
@@ -351,5 +366,14 @@
         }
     }
 </script>
+
+<div id="mobile-overlay" class="mobile-overlay" onclick="document.getElementById('sidebar').classList.remove('open'); this.classList.remove('open');"></div>
+<script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('mobile-overlay').classList.toggle('open');
+    }
+</script>
+
 </body>
 </html>

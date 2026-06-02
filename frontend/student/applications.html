@@ -11,6 +11,18 @@
     <style>
         @keyframes fadeInUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         .app-row { animation: fadeInUp 0.35s ease-out both; }
+    
+        @media (max-width: 768px) {
+            #sidebar { position: fixed !important; left: -256px; transition: left 0.3s ease; z-index: 100; height: 100vh; box-shadow: 4px 0 15px rgba(0,0,0,0.1); }
+            #sidebar.open { left: 0; }
+            #mobile-menu-btn { display: block !important; }
+            .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+            .mobile-overlay.open { display: block; }
+            header { padding: 16px !important; }
+            main { padding: 16px !important; }
+            .field-grid { grid-template-columns: 1fr !important; }
+        }
+
     </style>
 </head>
 <body style="background:#f9fafb; font-family:Inter,system-ui,sans-serif;">
@@ -44,7 +56,10 @@
 
         <!-- Header -->
         <header style="background:#fff;border-bottom:1px solid #f3f4f6;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;">
-            <h1 style="font-size:1.25rem;font-weight:600;color:#1f2937;margin:0;">My Applications</h1>
+            <div style="display:flex; align-items:center;">
+                <button id="mobile-menu-btn" style="display:none; background:none; border:none; font-size:1.5rem; cursor:pointer; margin-right:16px; padding:0;" onclick="toggleSidebar()">☰</button>
+                <h1 style="font-size:1.25rem;font-weight:600;color:#1f2937;margin:0;">My Applications</h1>
+            </div>
             <span style="font-size:0.875rem;color:#9ca3af;">Track your application status</span>
         </header>
 
@@ -330,5 +345,14 @@
         }
     }
 </script>
+
+<div id="mobile-overlay" class="mobile-overlay" onclick="document.getElementById('sidebar').classList.remove('open'); this.classList.remove('open');"></div>
+<script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('mobile-overlay').classList.toggle('open');
+    }
+</script>
+
 </body>
 </html>
