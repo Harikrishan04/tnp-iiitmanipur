@@ -155,7 +155,7 @@ class AdminService
                         $mail->SMTPAuth   = true;
                         $mail->Username   = $_ENV['SMTP_USER'] ?? $_ENV['SMTP_USERNAME'] ?? '';
                         $pass             = $_ENV['SMTP_PASS'] ?? $_ENV['SMTP_PASSWORD'] ?? '';
-                        $mail->Password   = str_replace(' ', '', $pass);
+                        $mail->Password   = str_replace([' ', '"', "'"], '', $pass);
                         $mail->SMTPSecure = 'tls';
                         $mail->Port       = (int) ($_ENV['SMTP_PORT'] ?? 587);
                         $mail->Timeout    = 10;
