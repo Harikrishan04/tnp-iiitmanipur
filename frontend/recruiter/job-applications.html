@@ -129,7 +129,8 @@
         }
         
         const user = Auth.getUser();
-        document.getElementById('sidebar-email').textContent = user?.email || '';
+        const sidebarEmail = document.getElementById('sidebar-email');
+        if (sidebarEmail) sidebarEmail.textContent = user?.email || '';
         
         await loadJobDetails();
         await loadApplications(1);
