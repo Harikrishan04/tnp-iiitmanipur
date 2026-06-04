@@ -192,6 +192,71 @@ class AuthService
     }
 
     /**
+     * Handle OAuth Login (Google/LinkedIn) and return JWT.
+     *
+     * @param string $provider 'google' or 'linkedin'
+     * @param string $oauthId  The provider's unique ID
+     * @param string $email    User email address
+     * @param string|null $avatarUrl User avatar URL
+     * @param string $role     The requested role
+     * @return string          JWT Token
+     * @throws \Exception      If authentication/registration fails
+     */
+    public function handleOAuthLogin(string $provider, string $oauthId, string $email, ?string $avatarUrl, string $role): string
+    {
+        $user = $this->userModel->findByEmailAndRole($email, $role);
+
+        // Check if role requires admin creation
+        if (!$user && in_array($role, AppConfig::ADMIN_CREATED_ROLES, true)) {
+            throw new \Exception("Registration not allowed for {$role}. Please contact admin.");
+        }
+
+        // Check if email is used for a different role
+        if (!$user) {
+            $existingUser = $this->userModel->findByEmail($email);
+            if ($existingUser) {
+                throw new \Exception("This email is already registered with a different role.");
+            }
+        }
+
+        // Auto-register if allowed
+        if (!$user && in_array($role, AppConfig::SELF_REGISTER_ROLES, true)) {
+            $userId = $this->userModel->create($email, $role);
+            $user = $this->userModel->findById($userId);
+            Logger::info('auth', "New {$role} user created via OAuth", ['email' => $email, 'user_id' => $userId]);
+        }
+
+        if (!$user) {
+            throw new \Exception("Unable to process login request.");
+        }
+
+        if (!$user['is_active']) {
+            throw new \Exception("Your account has been deactivated.");
+        }
+
+        // Link OAuth ID and Avatar if not linked
+        $column = $provider === 'google' ? 'google_id' : 'linkedin_id';
+        if (empty($user[$column]) || empty($user['avatar_url'])) {
+            $stmt = $this->db->prepare("UPDATE users SET {$column} = ?, avatar_url = COALESCE(avatar_url, ?) WHERE user_id = ?");
+            $stmt->execute([$oauthId, $avatarUrl, $user['user_id']]);
+        }
+
+        // Update login timestamp
+        $this->userModel->updateLoginTimestamp($user['user_id']);
+
+        // Mint JWT
+        $token = JwtConfig::issue([
+            'sub'   => $user['user_id'],
+            'role'  => $role,
+            'email' => $email,
+        ]);
+
+        Logger::info('auth', "OAuth login successful", ['email' => $email, 'role' => $role, 'provider' => $provider]);
+
+        return $token;
+    }
+
+    /**
      * Refresh an existing JWT token.
      *
      * @param array $claims Current token claims

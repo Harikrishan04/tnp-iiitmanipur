@@ -21,6 +21,7 @@ use App\Controllers\CoordinatorController;
 use App\Controllers\AdminController;
 use App\Controllers\DocumentController;
 use App\Controllers\RoundController;
+use App\Controllers\OAuthController;
 
 // ─── Health Check (Railway / load balancers) ──────────────────────────────────
 $router->get('/health', function() {
@@ -39,6 +40,12 @@ $router->group('/auth', function ($router) {
     $router->post('/login',      [AuthController::class, 'login']);
     $router->post('/verify-otp', [AuthController::class, 'verifyOtp']);
     $router->post('/refresh',    [AuthController::class, 'refresh'], ['auth']);
+    
+    // OAuth Routes
+    $router->get('/google',          [OAuthController::class, 'googleRedirect']);
+    $router->get('/google/callback', [OAuthController::class, 'googleCallback']);
+    $router->get('/linkedin',          [OAuthController::class, 'linkedinRedirect']);
+    $router->get('/linkedin/callback', [OAuthController::class, 'linkedinCallback']);
 });
 // ─── Students ────────────────────────────────────────────────────────────────
 $router->group('/students', function ($router) {

@@ -146,4 +146,33 @@ class Auth {
         this.clearSession();
         window.location.href = APP_CONFIG.LOGIN_PAGE;
     }
+
+    /**
+     * Check URL parameters for OAuth token or error.
+     * Call this on the login page's DOMContentLoaded.
+     */
+    static checkOAuthCallback() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const authError = urlParams.get('error');
+        
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                this.setSession(token, { sub: payload.sub, email: payload.email, role: payload.role });
+                this.redirectToDashboard();
+                return true;
+            } catch(e) {
+                if (typeof showToast !== 'undefined') showToast('error', 'Authentication failed: Invalid token format.');
+            }
+        }
+        
+        if (authError === 'domain_invalid') {
+            if (typeof showToast !== 'undefined') showToast('error', 'Only @iiitmanipur.ac.in emails are permitted for this role.');
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return false;
+        }
+        
+        return false;
+    }
 }

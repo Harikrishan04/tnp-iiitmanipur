@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login — IIIT Manipur Placement Portal</title>
-    <meta name="description" content="Sign in to the IIIT Manipur Training & Placement Portal. Students, recruiters, and coordinators can access their dashboards.">
+    <meta name="description"
+        content="Sign in to the IIIT Manipur Training & Placement Portal. Students, recruiters, and coordinators can access their dashboards.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -12,35 +14,74 @@
     <style>
         /* Login-specific animations */
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to   { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
+
         @keyframes slideInRight {
-            from { opacity: 0; transform: translateX(30px); }
-            to   { opacity: 1; transform: translateX(0); }
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
-        .animate-fade-in-up { animation: fadeInUp 0.6s ease-out; }
-        .animate-slide-in   { animation: slideInRight 0.5s ease-out; }
-        .animate-delay-1    { animation-delay: 0.1s; animation-fill-mode: backwards; }
-        .animate-delay-2    { animation-delay: 0.2s; animation-fill-mode: backwards; }
-        .animate-delay-3    { animation-delay: 0.3s; animation-fill-mode: backwards; }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .animate-slide-in {
+            animation: slideInRight 0.5s ease-out;
+        }
+
+        .animate-delay-1 {
+            animation-delay: 0.1s;
+            animation-fill-mode: backwards;
+        }
+
+        .animate-delay-2 {
+            animation-delay: 0.2s;
+            animation-fill-mode: backwards;
+        }
+
+        .animate-delay-3 {
+            animation-delay: 0.3s;
+            animation-fill-mode: backwards;
+        }
 
         /* OTP input letter-spacing */
-        #otp-input { letter-spacing: 0.5em; text-align: center; }
+        #otp-input {
+            letter-spacing: 0.5em;
+            text-align: center;
+        }
     </style>
 </head>
+
 <body class="min-h-screen bg-white">
 
     <div class="min-h-screen grid lg:grid-cols-5">
 
         <!-- ═══ Left Panel — Branding ═══ -->
-        <div class="lg:col-span-3 glass-panel flex flex-col items-center justify-center p-8 lg:p-16 text-white relative overflow-hidden">
+        <div
+            class="lg:col-span-3 glass-panel flex flex-col items-center justify-center p-8 lg:p-16 text-white relative overflow-hidden">
             <!-- Decorative circles -->
             <div class="absolute -top-20 -left-20 w-72 h-72 bg-white/5 rounded-full"></div>
             <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-white/5 rounded-full"></div>
 
             <div class="relative z-10 text-center space-y-6 animate-fade-in-up">
-                <div class="w-48 h-48 mx-auto bg-white/15 rounded-full flex items-center justify-center shadow-2xl backdrop-blur-sm">
+                <div
+                    class="w-48 h-48 mx-auto bg-white/15 rounded-full flex items-center justify-center shadow-2xl backdrop-blur-sm">
                     <img src="assets/img/iiitm-logo.png" alt="IIIT Manipur" class="w-40 h-40 object-contain">
                 </div>
                 <div>
@@ -71,19 +112,19 @@
                     <!-- Role Tabs -->
                     <div class="flex bg-gray-100 rounded-xl p-1.5 shadow-inner" id="role-tabs">
                         <button type="button" data-role="student"
-                                class="role-tab flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-300 text-gray-500">
+                            class="role-tab flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-300 text-gray-500">
                             Student
                         </button>
                         <button type="button" data-role="recruiter"
-                                class="role-tab flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-300 text-gray-500">
+                            class="role-tab flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-300 text-gray-500">
                             Recruiter
                         </button>
                         <button type="button" data-role="coordinator"
-                                class="role-tab flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-300 text-gray-500">
+                            class="role-tab flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-300 text-gray-500">
                             Coordinator
                         </button>
                         <button type="button" data-role="admin" id="admin-tab" style="display:none;"
-                                class="role-tab flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-300 text-gray-500">
+                            class="role-tab flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-300 text-gray-500">
                             Admin
                         </button>
                     </div>
@@ -93,9 +134,8 @@
                         <label for="email-input" id="email-label" class="block text-sm font-medium text-gray-700">
                             College Email Address
                         </label>
-                        <input type="email" id="email-input" required
-                               class="input-field"
-                               placeholder="yourname@iiitmanipur.ac.in">
+                        <input type="email" id="email-input" required class="input-field"
+                            placeholder="yourname@iiitmanipur.ac.in">
                     </div>
 
                     <!-- Send OTP Button -->
@@ -105,13 +145,37 @@
                             <span class="spinner mr-2"></span> Sending...
                         </span>
                     </button>
+
+                    <!-- ═══ OAuth Integration ═══ -->
+                    <div style="display:flex; flex-direction:column; gap:12px; margin-top:24px; border-top:1px solid #e5e7eb; padding-top:24px;">
+                        <!-- Google Button -->
+                        <button type="button" onclick="startOAuth('google')" class="btn-secondary"
+                            style="display:flex; align-items:center; justify-content:center; gap:12px;">
+                            <img src="assets/img/google-icon.svg" style="width:20px; height:20px;" alt="Google" onerror="this.src='https://www.svgrepo.com/show/475656/google-color.svg'">
+                            Sign in with Google
+                        </button>
+                        
+                        <!-- LinkedIn Button -->
+                        <button type="button" onclick="startOAuth('linkedin')" class="btn-secondary"
+                            style="display:flex; align-items:center; justify-content:center; gap:12px;">
+                            <img src="assets/img/linkedin-icon.svg" style="width:20px; height:20px;" alt="LinkedIn" onerror="this.src='https://www.svgrepo.com/show/448234/linkedin.svg'">
+                            Sign in with LinkedIn
+                        </button>
+                    </div>
                 </div>
+
+                <script>
+                function startOAuth(provider) {
+                    window.location.href = APP_CONFIG.API_BASE_URL + `/auth/${provider}?role=` + selectedRole;
+                }
+                </script>
 
                 <!-- ═══ STEP 2: OTP Verification ═══ -->
                 <div id="step-otp" class="hidden space-y-6">
 
                     <!-- Info banner -->
-                    <div id="otp-info" class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 flex items-start gap-3">
+                    <div id="otp-info"
+                        class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 flex items-start gap-3">
                         <span class="text-lg mt-0.5">📧</span>
                         <div>
                             OTP sent to <strong id="otp-email-display"></strong>
@@ -122,12 +186,8 @@
                     <!-- OTP Input -->
                     <div class="space-y-2">
                         <label for="otp-input" class="block text-sm font-medium text-gray-700">Enter OTP</label>
-                        <input type="text" id="otp-input" maxlength="6" required
-                               class="input-field"
-                               placeholder="000000"
-                               pattern="[0-9]{6}"
-                               autocomplete="one-time-code"
-                               inputmode="numeric">
+                        <input type="text" id="otp-input" maxlength="6" required class="input-field"
+                            placeholder="000000" pattern="[0-9]{6}" autocomplete="one-time-code" inputmode="numeric">
                     </div>
 
                     <!-- Verify Button -->
@@ -143,7 +203,7 @@
                         <div id="resend-section">
                             <span class="text-gray-500">Didn't receive it?</span>
                             <button type="button" id="resend-btn" onclick="handleResendOtp()"
-                                    class="text-brand-700 font-medium hover:underline ml-1">
+                                class="text-brand-700 font-medium hover:underline ml-1">
                                 Resend OTP
                             </button>
                         </div>
@@ -152,7 +212,7 @@
                         </div>
                         <div class="border-t border-gray-100 pt-3">
                             <button type="button" onclick="goBackToEmail()"
-                                    class="text-gray-500 hover:text-gray-700 transition-colors">
+                                class="text-gray-500 hover:text-gray-700 transition-colors">
                                 ← Back to email entry
                             </button>
                         </div>
@@ -171,10 +231,13 @@
         // ─── State ───────────────────────────────────────────────────────────────
         let selectedRole = 'student';
         let currentEmail = '';
-        let resendTimer  = null;
+        let resendTimer = null;
 
         // ─── Init ────────────────────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
+            // Check for OAuth Token or Error
+            if (Auth.checkOAuthCallback()) return;
+
             // If already authenticated, redirect to dashboard
             if (Auth.isAuthenticated()) {
                 Auth.redirectToDashboard();
@@ -221,10 +284,10 @@
 
             // Update email label
             const labels = {
-                student:     'College Email (@iiitmanipur.ac.in)',
-                recruiter:   'Official Company Email',
+                student: 'College Email (@iiitmanipur.ac.in)',
+                recruiter: 'Official Company Email',
                 coordinator: 'Official Email',
-                admin:       'Admin Email'
+                admin: 'Admin Email'
             };
             document.getElementById('email-label').textContent = labels[role] || 'Email Address';
         }
@@ -316,8 +379,8 @@
             document.getElementById('step-otp').classList.remove('hidden');
             document.getElementById('step-otp').classList.add('animate-slide-in');
             document.getElementById('otp-email-display').textContent = currentEmail;
-            document.getElementById('otp-role-display').textContent  = selectedRole;
-            document.getElementById('form-title').textContent    = 'Verify OTP';
+            document.getElementById('otp-role-display').textContent = selectedRole;
+            document.getElementById('form-title').textContent = 'Verify OTP';
             document.getElementById('form-subtitle').textContent = 'Enter the 6-digit code sent to your email';
             document.getElementById('otp-input').focus();
         }
@@ -325,7 +388,7 @@
         function goBackToEmail() {
             document.getElementById('step-otp').classList.add('hidden');
             document.getElementById('step-email').classList.remove('hidden');
-            document.getElementById('form-title').textContent    = 'Welcome Back';
+            document.getElementById('form-title').textContent = 'Welcome Back';
             document.getElementById('form-subtitle').textContent = 'Sign in to your placement portal';
             hideAlert();
             if (resendTimer) clearInterval(resendTimer);
@@ -335,8 +398,8 @@
             const container = document.getElementById('alert-container');
             const colors = {
                 success: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                error:   'bg-red-50 text-red-800 border-red-200',
-                info:    'bg-blue-50 text-blue-800 border-blue-200',
+                error: 'bg-red-50 text-red-800 border-red-200',
+                info: 'bg-blue-50 text-blue-800 border-blue-200',
             };
             const icons = { success: '✓', error: '✕', info: 'ℹ' };
 
@@ -349,24 +412,24 @@
         }
 
         function setButtonLoading(prefix, loading) {
-            const text    = document.getElementById(`${prefix}-text`);
+            const text = document.getElementById(`${prefix}-text`);
             const spinner = document.getElementById(`${prefix}-spinner`);
-            const btn     = document.getElementById(`${prefix}-btn`) ||
-                            document.getElementById(`${prefix}-otp-btn`);
+            const btn = document.getElementById(`${prefix}-btn`) ||
+                document.getElementById(`${prefix}-otp-btn`);
 
-            if (text)    text.classList.toggle('hidden', loading);
+            if (text) text.classList.toggle('hidden', loading);
             if (spinner) spinner.classList.toggle('hidden', !loading);
-            if (btn)     btn.disabled = loading;
+            if (btn) btn.disabled = loading;
         }
 
         function startResendTimer() {
             let timeLeft = APP_CONFIG.OTP_COOLDOWN;
             const resendSection = document.getElementById('resend-section');
-            const timerSection  = document.getElementById('timer-section');
-            const countdown     = document.getElementById('countdown');
+            const timerSection = document.getElementById('timer-section');
+            const countdown = document.getElementById('countdown');
 
             if (resendSection) resendSection.classList.add('hidden');
-            if (timerSection)  timerSection.classList.remove('hidden');
+            if (timerSection) timerSection.classList.remove('hidden');
 
             resendTimer = setInterval(() => {
                 timeLeft--;
@@ -375,10 +438,11 @@
                 if (timeLeft <= 0) {
                     clearInterval(resendTimer);
                     if (resendSection) resendSection.classList.remove('hidden');
-                    if (timerSection)  timerSection.classList.add('hidden');
+                    if (timerSection) timerSection.classList.add('hidden');
                 }
             }, 1000);
         }
     </script>
 </body>
+
 </html>
